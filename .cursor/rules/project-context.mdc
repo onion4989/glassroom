@@ -1,0 +1,15 @@
+---
+description: Glassroom の段階・技術・見た目
+alwaysApply: true
+---
+
+# Glassroom
+
+- 段階: デモ
+- 用途: グラスルームのヒーロー1画面
+- 技術: Next.js App Router、TypeScript、Tailwind CSS v4、`src/`
+- 認証・DB・問い合わせは置かない
+- 見た目の正: Figma Glass_Design の Hero（ノード 96:11）
+- 書体: 英名 Montserrat Alternates 400、和文 Noto Sans JP 400
+- 背景: 上 `#000000`、下 `#2b2b2b` の縦グラデーション
+- 文言は Figma の3行のみ。住所は `東京都〇〇〇区〇〇〇町1-1-2` のまま

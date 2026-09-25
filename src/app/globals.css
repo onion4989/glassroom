@@ -1,26 +1,64 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-brand: var(--font-montserrat);
+  --font-jp: var(--font-noto-jp);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #000000;
+  color: #ffffff;
+}
+
+.draw-ch {
+  display: inline-block;
+  height: 1em;
+  overflow: visible;
+  vertical-align: -0.032em;
+}
+
+.draw-ch:not(:last-child) {
+  margin-right: 0.12em;
+}
+
+@media (min-width: 768px) {
+  .draw-ch:not(:last-child) {
+    margin-right: 0.2em;
+  }
+}
+
+@media (min-width: 1024px) {
+  .draw-ch:not(:last-child) {
+    margin-right: 0.3em;
+  }
+}
+
+.draw-glyph {
+  fill: #ffffff;
+}
+
+.draw-pen {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 200;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw-pen calc(2s * var(--part, 1))
+    cubic-bezier(0.47, 0, 0.745, 0.715) forwards;
+  animation-delay: calc(var(--i) * 0.12s + var(--lag, 0s));
+}
+
+@keyframes draw-pen {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draw-pen {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
 }
