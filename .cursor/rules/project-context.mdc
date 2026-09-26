@@ -6,10 +6,12 @@ alwaysApply: true
 # Glassroom
 
 - 段階: デモ
-- 用途: グラスルームのヒーロー1画面
+- 概要: 架空の眼鏡ブランドの製品紹介ランディングページ
+- 構成: HERO / FREE FiTイントロダクション / 形状記憶チタンフレーム / 3つの特徴 / 期間限定モデルの紹介 / FREE FiTの製品紹介 / FOOTER
+- アニメーション: GSAP によるパララックスとスクロールアニメーション
 - 技術: Next.js App Router、TypeScript、Tailwind CSS v4、`src/`
 - 認証・DB・問い合わせは置かない
-- 見た目の正: Figma Glass_Design の Hero（ノード 96:11）
+- 見た目の正: Figma Glass_Design
 - 書体: 英名 Montserrat Alternates 400、和文 Noto Sans JP 400
 - 背景: 上 `#000000`、下 `#2b2b2b` の縦グラデーション
-- 文言は Figma の3行のみ。住所は `東京都〇〇〇区〇〇〇町1-1-2` のまま
+- 住所は `東京都〇〇〇区〇〇〇町1-1-2` のまま
