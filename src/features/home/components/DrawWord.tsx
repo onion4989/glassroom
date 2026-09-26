@@ -22,13 +22,13 @@ const penG =
   "M640 380Q520 220 400 290Q90 340 100 620Q110 980 420 940Q620 900 640 760L640 1020";
 const penL = "M151 200L151 936L640 936";
 const archA =
-  "M144 1040C144 620 200 360 400 295C600 360 656 620 656 1040";
-const barA = "M170 730L650 730";
+  "M135 1040L135 570C141 500 160 450 190 400C230 340 300 305 400 295C500 305 570 340 610 400C640 450 659 500 665 570L665 1040";
+const barA = "M144 730L780 730";
 const penS =
   "M500 400C560 360 500 230 340 250C160 280 120 440 220 540C300 620 480 640 500 780C560 860 400 980 210 930";
 const stemR = "M151 200L151 1020";
 const bowlR =
-  "M180 360C420 200 700 280 650 470C620 660 430 760 220 720";
+  "M188 300C375 300 480 314 560 355C609 420 625 470 625 508C625 560 589 629 552 666C494 696 300 714 188 714L0 714";
 const legR = "M450 730L660 1010";
 const penO =
   "M420 295Q760 295 760 618Q760 960 420 941Q80 920 88 618Q100 280 420 295";
@@ -38,7 +38,7 @@ const midM =
 const rightM =
   "M615 500C720 160 1020 160 863 300C980 430 1120 400 1080 540L1080 1020";
 
-type Stroke = { d: string; part: number };
+type Stroke = { d: string; part: number; sw?: number };
 
 const brand: { outline: string; advance: number; strokes: Stroke[] }[] = [
   { outline: pathG, advance: 773, strokes: [{ d: penG, part: 1 }] },
@@ -47,8 +47,8 @@ const brand: { outline: string; advance: number; strokes: Stroke[] }[] = [
     outline: pathA,
     advance: 801,
     strokes: [
-      { d: archA, part: 0.74 },
-      { d: barA, part: 0.26 },
+      { d: archA, part: 0.74, sw: 90 },
+      { d: barA, part: 0.26, sw: 70 },
     ],
   },
   { outline: pathS, advance: 615, strokes: [{ d: penS, part: 1 }] },
@@ -57,8 +57,8 @@ const brand: { outline: string; advance: number; strokes: Stroke[] }[] = [
     outline: pathR,
     advance: 723,
     strokes: [
-      { d: stemR, part: 0.34 },
-      { d: bowlR, part: 0.42 },
+      { d: stemR, part: 0.34, sw: 74 },
+      { d: bowlR, part: 0.42, sw: 96 },
       { d: legR, part: 0.24 },
     ],
   },
@@ -114,6 +114,7 @@ export function DrawWord() {
                   {
                     "--part": stroke.part,
                     "--lag": `${lag * 2}s`,
+                    ...(stroke.sw != null ? { "--sw": stroke.sw } : {}),
                   } as React.CSSProperties
                 }
               />
