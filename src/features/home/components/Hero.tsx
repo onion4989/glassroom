@@ -2,8 +2,11 @@ import { DrawWord } from "@/features/home/components/DrawWord";
 
 export function Hero() {
   return (
-    <section className="hero-light flex min-h-svh w-full items-center justify-center px-4">
-      <div className="flex flex-col items-center text-center text-white">
+    <section className="hero-light z-0 flex min-h-svh w-full items-center justify-center px-4 motion-safe:sticky motion-safe:top-0">
+      <div
+        data-hero-copy
+        className="flex flex-col items-center text-center text-white"
+      >
         <h1 className="font-brand text-[28px] leading-none whitespace-nowrap md:text-[56px] lg:text-[96px]">
           <span className="sr-only">GLASSROOM</span><span aria-hidden="true"><DrawWord /></span>
         </h1>

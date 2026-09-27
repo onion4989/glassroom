@@ -5,162 +5,189 @@ import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 
 const fitCopy =
-  "軽い、ズレにくい、驚きのかけ心地”がテーマのFREE FiT（フリーフィット）。サイズ・フレーム・カラーともに眼鏡市場No.1のラインアップを誇り、多くのお客様に支持されるブランドから、シートメタルフロントタイプが登場しました。FFT-097は、男女問わずかけられる大きめサイズのオーバルタイプです。やわらかな形の玉型が自然に顔に馴染み、リム上部のカットで立体感と上質な印象を演出します。また、エッジの効いたテンプルがほどよく個性を表現し、横顔をすっきりと引き締めます。";
+  "軽い、ズレにくい、驚きのかけ心地”がテーマのFREE FiT（フリーフィット）。男女問わずかけられる大きめサイズのオーバルタイプです。やわらかな形の玉型が自然に顔に馴染み、リム上部のカットで立体感と上質な印象を演出します。また、エッジの効いたテンプルがほどよく個性を表現し、横顔をすっきりと引き締めます。";
 
 const fitTitle = "FREE FiT";
+const artBase = 1440;
+const glassTravel = 140;
+const boxTravel = 50;
+const slideDist = 80;
+const typeDur = 1.2;
+const typeLag = 0.8;
+
+const glassImg = {
+  src: "/assets/pages/top/intro/glass_free-fit.png",
+  width: 1089,
+  height: 510,
+} as const;
 
 export function FitIntro() {
   const rootRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
-  const dotRef = useRef<HTMLSpanElement>(null);
-  const shaftRef = useRef<HTMLSpanElement>(null);
-  const stubRef = useRef<HTMLSpanElement>(null);
+  const caretRef = useRef<HTMLSpanElement>(null);
+  const glassMoveRef = useRef<HTMLDivElement>(null);
+  const glassFadeRef = useRef<HTMLDivElement>(null);
+  const boxMoveRef = useRef<HTMLDivElement>(null);
+  const boxFadeRef = useRef<HTMLDivElement>(null);
 
   // GSAP は DOM へ同期する。useGSAP が解除時に戻す。
   useGSAP(
     () => {
       const root = rootRef.current;
-      if (!root) return;
+      const title = titleRef.current;
+      const caret = caretRef.current;
+      const glassMove = glassMoveRef.current;
+      const glassFade = glassFadeRef.current;
+      const boxMove = boxMoveRef.current;
+      const boxFade = boxFadeRef.current;
+      if (!root || !title || !glassMove || !glassFade || !boxMove || !boxFade) {
+        return;
+      }
 
+      const artScale = () => Math.min(root.clientWidth, artBase) / artBase;
       const mm = gsap.matchMedia();
 
-      const play = (withLine: boolean) => {
-        const title = titleRef.current;
-        if (!title) return;
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        title.textContent = fitTitle;
+        if (caret) gsap.set(caret, { autoAlpha: 0 });
+        gsap.set([glassMove, glassFade, boxMove, boxFade], {
+          clearProps: "transform,opacity,translate",
+        });
+      });
 
-        const tl = gsap.timeline({
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        const blink = caret
+          ? gsap.fromTo(
+              caret,
+              { opacity: 1 },
+              {
+                opacity: 0,
+                duration: 0.45,
+                repeat: -1,
+                yoyo: true,
+                ease: "steps(1)",
+                paused: true,
+                immediateRender: false,
+              },
+            )
+          : null;
+
+        gsap.to(title, {
+          duration: typeDur,
+          delay: typeLag,
+          text: { value: fitTitle, delimiter: "" },
+          ease: "none",
           scrollTrigger: {
             trigger: root,
-            start: "top 85%",
-            end: "top 35%",
-            scrub: true,
+            start: "top 75%",
+            once: true,
+          },
+          onStart: () => {
+            blink?.restart();
           },
         });
 
-        tl.fromTo(
-          title,
-          { x: -50, opacity: 0 },
-          { x: 0, opacity: 1, duration: 0.98, ease: "none" },
+        // 横スライドと視差は別ノード。x と y を取り合わない。
+        // 上端 75%〜50% で眼鏡、50%〜30% で箱。戻すと逆に戻る。
+        const enter = gsap.timeline({
+          defaults: { ease: "none" },
+          scrollTrigger: {
+            trigger: root,
+            start: "top 75%",
+            end: "top 30%",
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        });
+        enter.fromTo(
+          glassFade,
+          { x: () => -slideDist * artScale(), opacity: 0 },
+          { x: 0, opacity: 1, duration: 25, immediateRender: true },
+          0,
+        );
+        enter.fromTo(
+          boxFade,
+          { x: () => slideDist * artScale(), opacity: 0 },
+          { x: 0, opacity: 1, duration: 20, immediateRender: true },
+          25,
         );
 
-        const dot = dotRef.current;
-        const shaft = shaftRef.current;
-        const stub = stubRef.current;
-        if (!withLine || !dot || !shaft || !stub) return;
+        const drift = (el: HTMLDivElement, travel: number) => {
+          gsap.fromTo(
+            el,
+            { y: () => travel * artScale() },
+            {
+              y: () => -travel * artScale(),
+              ease: "none",
+              immediateRender: true,
+              scrollTrigger: {
+                trigger: root,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+                invalidateOnRefresh: true,
+              },
+            },
+          );
+        };
+        drift(glassMove, glassTravel);
+        drift(boxMove, boxTravel);
 
-        tl.fromTo(
-          dot,
-          { scale: 0, opacity: 0 },
-          {
-            scale: 1,
-            opacity: 1,
-            duration: 0.12,
-            ease: "none",
-            transformOrigin: "center center",
-          },
-          ">",
-        );
-        tl.fromTo(
-          shaft,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            duration: 0.4,
-            ease: "none",
-            transformOrigin: "left center",
-          },
-          ">",
-        );
-        tl.fromTo(
-          stub,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            duration: 0.18,
-            ease: "none",
-            transformOrigin: "left center",
-          },
-          ">",
-        );
-      };
-
-      mm.add(
-        "(prefers-reduced-motion: no-preference) and (max-width: 1023px)",
-        () => play(false),
-      );
-      mm.add(
-        "(prefers-reduced-motion: no-preference) and (min-width: 1024px)",
-        () => play(true),
-      );
-      mm.add("(prefers-reduced-motion: reduce)", () => {
-        if (titleRef.current) {
-          gsap.set(titleRef.current, {
-            clearProps: "transform,opacity,translate",
-          });
-        }
-        const parts = [dotRef.current, shaftRef.current, stubRef.current].filter(
-          (el) => el != null,
-        );
-        gsap.set(parts, { clearProps: "transform,opacity,scale" });
+        return () => {
+          blink?.kill();
+        };
       });
     },
     { scope: rootRef },
   );
 
   return (
-    <section ref={rootRef} aria-labelledby="fit-intro-title" className="w-full">
-      <div className="@container relative w-full lg:aspect-[1440/800]">
-        <div className="relative aspect-[1440/800] w-full lg:absolute lg:inset-0">
-          <Image
-            src="/assets/pages/top/intro/img_top_intro-woman.jpg"
-            alt="室内で微笑む女性"
-            fill
-            sizes="100vw"
-            className="object-cover"
-          />
-        </div>
-        <div className="px-4 py-8 md:px-8 md:py-10 lg:contents">
-          <h2
-            id="fit-intro-title"
-            className="font-jp text-[32px] leading-none whitespace-nowrap text-white md:text-[48px] lg:absolute lg:top-[9.5%] lg:left-[7.153%] lg:text-[6.667cqw] lg:text-black"
-          >
-            <span className="sr-only">{fitTitle}</span>
-            <span
-              ref={titleRef}
-              aria-hidden="true"
-              className="inline-block motion-safe:-translate-x-[50px] motion-safe:opacity-0"
-            >
-              {fitTitle}
-            </span>
-          </h2>
-          <div
+    <section
+      ref={rootRef}
+      data-fit-intro
+      aria-labelledby="fit-intro-title"
+      className="relative z-10 w-full overflow-hidden bg-black"
+    >
+      <div className="@container relative mx-auto h-[55.556cqw] w-full max-w-360">
+        <h2
+          id="fit-intro-title"
+          className="absolute top-[5cqw] left-[8.333cqw] cursor-default font-jp text-[6.667cqw] leading-none whitespace-nowrap text-white select-none"
+        >
+          <span className="sr-only">{fitTitle}</span>
+          <span ref={titleRef} aria-hidden="true" />
+          <span
+            ref={caretRef}
             aria-hidden
-            className="mt-2 h-[2px] w-28 bg-white md:w-48 lg:absolute lg:top-[22.875%] lg:left-[7.708%] lg:mt-0 lg:w-[27.222%] lg:bg-black"
+            className="ml-[0.08em] inline-block h-[0.85em] w-[0.045em] translate-y-[0.08em] bg-white opacity-0"
           />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute top-[25%] left-[32.986%] hidden h-[6.667cqw] w-[5.347cqw] lg:block"
-          >
-            <span
-              ref={dotRef}
-              className="absolute top-0 left-0 aspect-square w-[12.987%] origin-center rounded-full bg-white lg:motion-safe:scale-0 lg:motion-safe:opacity-0"
+        </h2>
+        <div
+          ref={glassMoveRef}
+          className="absolute top-[19.444cqw] left-[23.403cqw] w-[50.417cqw]"
+        >
+          <div ref={glassFadeRef} className="motion-safe:opacity-0">
+            <Image
+              src={glassImg.src}
+              alt="紫のオーバル型フレームの眼鏡"
+              width={glassImg.width}
+              height={glassImg.height}
+              sizes="(min-width: 1440px) 726px, 50vw"
+              className="h-[23.611cqw] w-full object-contain"
             />
-            <span className="absolute top-[5.729%] left-[6.494%] h-[2px] w-[129.521%] origin-left -translate-y-1/2 rotate-[63.832deg]">
-              <span
-                ref={shaftRef}
-                className="block h-full w-full origin-left bg-white lg:motion-safe:scale-x-0"
-              />
-            </span>
-            <span className="absolute top-[97.917%] left-[63.636%] h-[2px] w-[36.364%]">
-              <span
-                ref={stubRef}
-                className="block h-full w-full origin-left bg-white lg:motion-safe:scale-x-0"
-              />
-            </span>
           </div>
-          <p className="mt-6 font-jp text-[15px] leading-[1.8] tracking-[0.06em] text-white md:text-[16px] lg:absolute lg:top-[69%] lg:left-[8.333%] lg:mt-0 lg:h-[28%] lg:w-[83.333%] lg:rounded-[15px] lg:bg-black/50 lg:px-[3.681cqw] lg:pt-[2.222cqw] lg:text-[1.389cqw] lg:leading-[1.75] lg:tracking-[0.1em] lg:backdrop-blur-[12px]">
-            {fitCopy}
-          </p>
+        </div>
+        <div
+          ref={boxMoveRef}
+          className="absolute top-[34.722cqw] left-[55.417cqw] z-10 w-[36.25cqw]"
+        >
+          <div
+            ref={boxFadeRef}
+            className="h-[20.556cqw] rounded-[1.042cqw] bg-black/40 px-[1.25cqw] pt-[1.389cqw] backdrop-blur-md motion-safe:opacity-0"
+          >
+            <p className="font-jp text-[1.389cqw] leading-[1.75] tracking-[0.1em] text-white">
+              {fitCopy}
+            </p>
+          </div>
         </div>
       </div>
     </section>
