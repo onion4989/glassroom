@@ -2,7 +2,7 @@ import { DrawWord } from "@/features/home/components/DrawWord";
 
 export function Hero() {
   return (
-    <section className="hero-light z-0 flex min-h-svh w-full items-center justify-center px-4 motion-safe:sticky motion-safe:top-0">
+    <section className="hero-light z-0 flex min-h-svh w-full items-center justify-center px-4 motion-safe:fixed motion-safe:inset-0 motion-safe:z-0">
       <div
         data-hero-copy
         className="flex flex-col items-center text-center text-white"

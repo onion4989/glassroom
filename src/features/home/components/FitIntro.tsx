@@ -11,7 +11,7 @@ const fitTitle = "FREE FiT";
 const artBase = 1440;
 const glassTravel = 140;
 const boxTravel = 50;
-const slideDist = 80;
+const slideDist = 160;
 const typeDur = 1.2;
 const typeLag = 0.8;
 
@@ -88,13 +88,13 @@ export function FitIntro() {
         });
 
         // 横スライドと視差は別ノード。x と y を取り合わない。
-        // 上端 75%〜50% で眼鏡、50%〜30% で箱。戻すと逆に戻る。
+        // 上端 55%〜10% で眼鏡と箱が同時に入る。戻すと逆に戻る。
         const enter = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
             trigger: root,
-            start: "top 75%",
-            end: "top 30%",
+            start: "top 55%",
+            end: "top 10%",
             scrub: true,
             invalidateOnRefresh: true,
           },
@@ -108,8 +108,8 @@ export function FitIntro() {
         enter.fromTo(
           boxFade,
           { x: () => slideDist * artScale(), opacity: 0 },
-          { x: 0, opacity: 1, duration: 20, immediateRender: true },
-          25,
+          { x: 0, opacity: 1, duration: 25, immediateRender: true },
+          0,
         );
 
         const drift = (el: HTMLDivElement, travel: number) => {

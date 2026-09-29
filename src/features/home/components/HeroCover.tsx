@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type ReactNode } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 const heroBlur = "blur(12px)";
 
@@ -34,6 +34,7 @@ export function HeroCover({ children }: { children: ReactNode }) {
             },
           },
         );
+        ScrollTrigger.refresh();
       });
     },
     { scope: rootRef },
