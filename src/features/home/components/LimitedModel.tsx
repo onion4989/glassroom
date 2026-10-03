@@ -242,7 +242,7 @@ export function LimitedModel() {
         ref={rootRef}
         data-limited
         aria-labelledby="limited-title"
-        className="relative z-10 w-full bg-black"
+        className="relative z-10 w-full bg-[#070707]"
       >
         <div ref={artRef} className="@container mx-auto w-full max-w-360">
           <div ref={stageRef} className="relative h-[55.556cqw]">

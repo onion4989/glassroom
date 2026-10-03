@@ -165,7 +165,7 @@ export function FuncDesign() {
               ease: "none",
               scrollTrigger: {
                 trigger: limited,
-                start: "top bottom",
+                start: "top 70%",
                 end: "top top",
                 scrub: true,
               },
@@ -200,7 +200,7 @@ export function FuncDesign() {
       ref={rootRef}
       data-func-design
       aria-labelledby="func-design-title"
-      className="relative z-10 w-full bg-black"
+      className="relative z-10 w-full bg-[#070707]"
     >
       <div ref={artRef} className="@container mx-auto w-full max-w-360">
         <h2

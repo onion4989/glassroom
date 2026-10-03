@@ -6,7 +6,7 @@
 }
 
 body {
-  background: #000000;
+  background: #070707;
   color: #ffffff;
 }
 
@@ -57,29 +57,7 @@ body {
 }
 
 .hero-light {
-  background-color: #000000;
-  background-image: linear-gradient(
-    #000000 0%,
-    #000000 16.67%,
-    #1e1e1e 33.33%,
-    #1e1e1e 50%,
-    #000000 66.67%,
-    #000000 83.33%,
-    #1e1e1e 100%
-  );
-  background-repeat: no-repeat;
-  background-size: 100% 300%;
-  animation: hero-drift 30s linear infinite;
-}
-
-@keyframes hero-drift {
-  from {
-    background-position: center 0%;
-  }
-
-  to {
-    background-position: center 100%;
-  }
+  background-color: #070707;
 }
 
 .rise-line {
@@ -106,13 +84,6 @@ body {
   .draw-pen {
     animation: none;
     stroke-dashoffset: 0;
-  }
-
-  .hero-light {
-    animation: none;
-    background-image: linear-gradient(#000000, #2b2b2b);
-    background-size: 100% 100%;
-    background-position: center top;
   }
 
   .rise-line,

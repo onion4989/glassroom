@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 
@@ -9,24 +8,15 @@ const fitCopy =
 
 const fitTitle = "FREE FiT";
 const artBase = 1440;
-const glassTravel = 140;
 const boxTravel = 50;
 const slideDist = 160;
 const typeDur = 1.2;
 const typeLag = 0.8;
 
-const glassImg = {
-  src: "/assets/pages/top/intro/glass_free-fit.png",
-  width: 1089,
-  height: 510,
-} as const;
-
 export function FitIntro() {
   const rootRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
   const caretRef = useRef<HTMLSpanElement>(null);
-  const glassMoveRef = useRef<HTMLDivElement>(null);
-  const glassFadeRef = useRef<HTMLDivElement>(null);
   const boxMoveRef = useRef<HTMLDivElement>(null);
   const boxFadeRef = useRef<HTMLDivElement>(null);
 
@@ -36,11 +26,9 @@ export function FitIntro() {
       const root = rootRef.current;
       const title = titleRef.current;
       const caret = caretRef.current;
-      const glassMove = glassMoveRef.current;
-      const glassFade = glassFadeRef.current;
       const boxMove = boxMoveRef.current;
       const boxFade = boxFadeRef.current;
-      if (!root || !title || !glassMove || !glassFade || !boxMove || !boxFade) {
+      if (!root || !title || !boxMove || !boxFade) {
         return;
       }
 
@@ -50,7 +38,7 @@ export function FitIntro() {
       mm.add("(prefers-reduced-motion: reduce)", () => {
         title.textContent = fitTitle;
         if (caret) gsap.set(caret, { autoAlpha: 0 });
-        gsap.set([glassMove, glassFade, boxMove, boxFade], {
+        gsap.set([boxMove, boxFade], {
           clearProps: "transform,opacity,translate",
         });
       });
@@ -87,51 +75,41 @@ export function FitIntro() {
           },
         });
 
-        // 横スライドと視差は別ノード。x と y を取り合わない。
-        // 上端 55%〜10% で眼鏡と箱が同時に入る。戻すと逆に戻る。
-        const enter = gsap.timeline({
-          defaults: { ease: "none" },
-          scrollTrigger: {
-            trigger: root,
-            start: "top 55%",
-            end: "top 10%",
-            scrub: true,
-            invalidateOnRefresh: true,
-          },
-        });
-        enter.fromTo(
-          glassFade,
-          { x: () => -slideDist * artScale(), opacity: 0 },
-          { x: 0, opacity: 1, duration: 25, immediateRender: true },
-          0,
-        );
-        enter.fromTo(
+        // 上端 55%〜10% で箱が入る。戻すと逆に戻る。
+        gsap.fromTo(
           boxFade,
           { x: () => slideDist * artScale(), opacity: 0 },
-          { x: 0, opacity: 1, duration: 25, immediateRender: true },
-          0,
+          {
+            x: 0,
+            opacity: 1,
+            ease: "none",
+            immediateRender: true,
+            scrollTrigger: {
+              trigger: root,
+              start: "top 55%",
+              end: "top 10%",
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          },
         );
 
-        const drift = (el: HTMLDivElement, travel: number) => {
-          gsap.fromTo(
-            el,
-            { y: () => travel * artScale() },
-            {
-              y: () => -travel * artScale(),
-              ease: "none",
-              immediateRender: true,
-              scrollTrigger: {
-                trigger: root,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: true,
-                invalidateOnRefresh: true,
-              },
+        gsap.fromTo(
+          boxMove,
+          { y: () => boxTravel * artScale() },
+          {
+            y: () => -boxTravel * artScale(),
+            ease: "none",
+            immediateRender: true,
+            scrollTrigger: {
+              trigger: root,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+              invalidateOnRefresh: true,
             },
-          );
-        };
-        drift(glassMove, glassTravel);
-        drift(boxMove, boxTravel);
+          },
+        );
 
         return () => {
           blink?.kill();
@@ -146,7 +124,7 @@ export function FitIntro() {
       ref={rootRef}
       data-fit-intro
       aria-labelledby="fit-intro-title"
-      className="relative z-10 w-full overflow-hidden bg-black"
+      className="relative z-10 w-full overflow-hidden bg-[#070707]"
     >
       <div className="@container relative mx-auto h-[55.556cqw] w-full max-w-360">
         <h2
@@ -161,21 +139,6 @@ export function FitIntro() {
             className="ml-[0.08em] inline-block h-[0.85em] w-[0.045em] translate-y-[0.08em] bg-white opacity-0"
           />
         </h2>
-        <div
-          ref={glassMoveRef}
-          className="absolute top-[19.444cqw] left-[23.403cqw] w-[50.417cqw]"
-        >
-          <div ref={glassFadeRef} className="motion-safe:opacity-0">
-            <Image
-              src={glassImg.src}
-              alt="紫のオーバル型フレームの眼鏡"
-              width={glassImg.width}
-              height={glassImg.height}
-              sizes="(min-width: 1440px) 726px, 50vw"
-              className="h-[23.611cqw] w-full object-contain"
-            />
-          </div>
-        </div>
         <div
           ref={boxMoveRef}
           className="absolute top-[34.722cqw] left-[55.417cqw] z-10 w-[36.25cqw]"

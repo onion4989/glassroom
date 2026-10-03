@@ -253,7 +253,7 @@ export function Titan() {
       ref={rootRef}
       data-titan
       aria-labelledby="titan-title"
-      className="relative z-10 w-full bg-black"
+      className="relative z-10 w-full bg-[#070707]"
     >
       <div className="@container relative mx-auto h-[55.556cqw] w-full max-w-360">
         {titanBits.map((bit, index) => {
