@@ -1,4 +1,5 @@
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { Feature } from "@/features/home/components/Feature";
 import { FitIntro } from "@/features/home/components/FitIntro";
 import { FuncDesign } from "@/features/home/components/FuncDesign";
 import { Hero } from "@/features/home/components/Hero";
@@ -15,6 +16,7 @@ export default function Home() {
           <div className="mt-[150px] flex flex-col gap-[150px]">
             <FitIntro />
             <Titan />
+            <Feature />
             <FuncDesign />
             <LimitedModel />
           </div>

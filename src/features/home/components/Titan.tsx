@@ -7,6 +7,7 @@ const letterY = 50;
 const letterStep = 0.03;
 const letterDur = 0.6;
 const videoLag = 0.3;
+const smokeRate = 1;
 const letterLag = 0.5;
 const upCount = 7;
 const showLowCopy = false;
@@ -130,14 +131,13 @@ const bitClass = (bit: TitanBit) =>
 
 function fitCanvas(canvas: HTMLCanvasElement, w: number, h: number) {
   // 網点は解像度より密度が効くので 1x に固定する
+  // 表示サイズは CSS（inset-0）に任せ、bitmap だけ合わせる
   const pxW = Math.max(1, Math.round(w));
   const pxH = Math.max(1, Math.round(h));
   if (canvas.width !== pxW || canvas.height !== pxH) {
     canvas.width = pxW;
     canvas.height = pxH;
   }
-  canvas.style.width = `${w}px`;
-  canvas.style.height = `${h}px`;
 }
 
 function paintScreen(
@@ -145,8 +145,11 @@ function paintScreen(
   video: HTMLVideoElement,
   samp: HTMLCanvasElement,
 ) {
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
+  // inline 固定幅だとリサイズ後に clientWidth が古いままになるため親を測る
+  const box = canvas.parentElement;
+  if (!box) return;
+  const w = box.clientWidth;
+  const h = box.clientHeight;
   if (w < 2 || h < 2 || video.readyState < 2) return;
 
   fitCanvas(canvas, w, h);
@@ -200,6 +203,10 @@ export function Titan() {
       const canvas = canvasRef.current;
       if (!root || !video || !canvas) return;
 
+      // 過去の固定 px 指定が残るとリサイズで右端が切れる
+      canvas.style.width = "";
+      canvas.style.height = "";
+
       const samp = document.createElement("canvas");
       let rafId = 0;
       const stopPaint = () => {
@@ -231,7 +238,8 @@ export function Titan() {
       const onResize = () => {
         paintScreen(canvas, video, samp);
       };
-      window.addEventListener("resize", onResize);
+      const ro = new ResizeObserver(onResize);
+      ro.observe(root);
 
       const mm = gsap.matchMedia();
 
@@ -317,6 +325,7 @@ export function Titan() {
         const beginVideo = () => {
           stopVideoWaits();
           const waitVideo = gsap.delayedCall(videoLag, () => {
+            video.playbackRate = smokeRate;
             const play = video.play();
             startPaint();
             if (play) play.catch(() => undefined);
@@ -386,7 +395,7 @@ export function Titan() {
       });
 
       return () => {
-        window.removeEventListener("resize", onResize);
+        ro.disconnect();
         stopPaint();
         video.pause();
       };

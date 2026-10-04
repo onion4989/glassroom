@@ -10,6 +10,8 @@ export const glassFrontImg = {
   height: 173,
 } as const;
 
+const coverBlur = "blur(12px)";
+
 export function StickyGlass() {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -19,6 +21,10 @@ export function StickyGlass() {
       const el = rootRef.current;
       const stack = el?.closest("[data-page-stack]");
       if (!el || !(stack instanceof HTMLElement)) return;
+
+      const fade = el.querySelector<HTMLElement>("[data-sticky-fade]");
+      const feature = stack.querySelector<HTMLElement>("[data-feature]");
+      const funcDesign = stack.querySelector<HTMLElement>("[data-func-design]");
 
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
@@ -30,7 +36,34 @@ export function StickyGlass() {
           pin: true,
           pinSpacing: false,
         });
+
+        let blurTl: gsap.core.Timeline | null = null;
+        if (fade && feature && funcDesign) {
+          gsap.set(fade, { filter: "blur(0px)" });
+          // 1本の scrub。区間前は progress 0＝ブラーなし（逆スクロールで HERO に戻っても解除）
+          blurTl = gsap
+            .timeline({
+              scrollTrigger: {
+                trigger: feature,
+                endTrigger: funcDesign,
+                start: "top 70%",
+                end: "bottom top",
+                scrub: true,
+              },
+            })
+            .fromTo(
+              fade,
+              { filter: "blur(0px)" },
+              { filter: coverBlur, duration: 1, ease: "none" },
+            )
+            // filter を再 tween しない（同じ blur 値の再適用で一瞬 0 に戻るのを防ぐ）
+            .to({}, { duration: 6 })
+            .to(fade, { filter: "blur(0px)", duration: 1, ease: "none" });
+        }
+
         return () => {
+          blurTl?.scrollTrigger?.kill();
+          blurTl?.kill();
           st.kill();
         };
       });
@@ -41,7 +74,7 @@ export function StickyGlass() {
   return (
     <div
       ref={rootRef}
-      className="pointer-events-none relative z-20 mt-[30px] w-full max-w-[620px]"
+      className="pointer-events-none relative z-30 mt-[30px] w-full max-w-[620px]"
     >
       {/* pin 本体と分離し、フェード／移動が pin の transform と干渉しないようにする */}
       <div data-sticky-fade className="w-full">
