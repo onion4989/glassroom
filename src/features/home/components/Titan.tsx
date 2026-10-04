@@ -1,20 +1,24 @@
 "use client";
 
-import Image from "next/image";
 import { useRef } from "react";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 
 const letterY = 50;
 const letterStep = 0.03;
 const letterDur = 0.6;
-const letterLag = 0.8;
+const videoLag = 0.3;
+const letterLag = 0.5;
 const upCount = 7;
-
-const flameImg = {
-  src: "/assets/pages/top/intro/img_glass-flame.png",
-  width: 1167,
-  height: 312,
-} as const;
+const showLowCopy = false;
+const showEdgeFade = true;
+const edgeFade = 120;
+/** 上帯テキストを下へずらす量（cqw）。0 で元位置に戻せる */
+const upTextShift = 11.5;
+const smokeSrc = "/assets/pages/top/titan/mv_smoke_loop.mp4";
+const cellStep = 6;
+const screenDeg = 22;
+const inkTone = "210, 210, 220";
+const backTone = "#070707";
 
 type TitanBit = {
   text: string;
@@ -124,16 +128,123 @@ const bitClass = (bit: TitanBit) =>
     bit.size,
   ].join(" ");
 
+function fitCanvas(canvas: HTMLCanvasElement, w: number, h: number) {
+  // 網点は解像度より密度が効くので 1x に固定する
+  const pxW = Math.max(1, Math.round(w));
+  const pxH = Math.max(1, Math.round(h));
+  if (canvas.width !== pxW || canvas.height !== pxH) {
+    canvas.width = pxW;
+    canvas.height = pxH;
+  }
+  canvas.style.width = `${w}px`;
+  canvas.style.height = `${h}px`;
+}
+
+function paintScreen(
+  canvas: HTMLCanvasElement,
+  video: HTMLVideoElement,
+  samp: HTMLCanvasElement,
+) {
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  if (w < 2 || h < 2 || video.readyState < 2) return;
+
+  fitCanvas(canvas, w, h);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const step = cellStep;
+  const cols = Math.max(1, Math.ceil(w / step));
+  const rows = Math.max(1, Math.ceil(h / step));
+  samp.width = cols;
+  samp.height = rows;
+  const sampCtx = samp.getContext("2d", { willReadFrequently: true });
+  if (!sampCtx) return;
+
+  sampCtx.drawImage(video, 0, 0, cols, rows);
+  const pix = sampCtx.getImageData(0, 0, cols, rows).data;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = backTone;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const rad = (screenDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const half = step * 0.5;
+
+  for (let y = half, row = 0; y < canvas.height; y += step, row++) {
+    for (let x = half, col = 0; x < canvas.width; x += step, col++) {
+      const i = (Math.min(rows - 1, row) * cols + Math.min(cols - 1, col)) * 4;
+      const lum = (pix[i] * 0.299 + pix[i + 1] * 0.587 + pix[i + 2] * 0.114) / 255;
+      const size = lum * step * 0.92;
+      if (size < 0.6) continue;
+      ctx.setTransform(cos, sin, -sin, cos, x, y);
+      ctx.fillStyle = `rgba(${inkTone},${0.35 + lum * 0.65})`;
+      ctx.fillRect(-size / 2, -size / 2, size, size);
+    }
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
 export function Titan() {
   const rootRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // GSAP は DOM へ同期する。useGSAP が解除時に戻す。
+  // GSAP / video / canvas を DOM へ同期する。useGSAP が解除時に戻す。
   useGSAP(
     () => {
       const root = rootRef.current;
-      if (!root) return;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!root || !video || !canvas) return;
+
+      const samp = document.createElement("canvas");
+      let rafId = 0;
+      const stopPaint = () => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = 0;
+      };
+      const tick = () => {
+        paintScreen(canvas, video, samp);
+        if (!video.paused && !video.ended) {
+          rafId = requestAnimationFrame(tick);
+        } else {
+          rafId = 0;
+        }
+      };
+      const startPaint = () => {
+        stopPaint();
+        rafId = requestAnimationFrame(tick);
+      };
+      const resetVideo = () => {
+        stopPaint();
+        video.pause();
+        try {
+          video.currentTime = 0;
+        } catch {
+          /* ignore seek before ready */
+        }
+        paintScreen(canvas, video, samp);
+      };
+      const onResize = () => {
+        paintScreen(canvas, video, samp);
+      };
+      window.addEventListener("resize", onResize);
 
       const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: reduce)", () => {
+        video.pause();
+        const showStill = () => paintScreen(canvas, video, samp);
+        if (video.readyState >= 2) showStill();
+        else video.addEventListener("loadeddata", showStill, { once: true });
+        return () => {
+          video.removeEventListener("loadeddata", showStill);
+        };
+      });
+
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const held: gsap.core.Animation[] = [];
         const prep = (list: HTMLElement[]) =>
@@ -145,6 +256,7 @@ export function Titan() {
             });
             if (!split.chars.length) return [];
             split.chars.forEach((ch) => {
+              if (!(ch instanceof HTMLElement)) return;
               ch.style.display = "inline-block";
             });
             const rise = gsap.from(split.chars, {
@@ -171,18 +283,25 @@ export function Titan() {
           const max = Math.max(0, ...parts.map((part) => part.count));
           return letterDur + letterStep * Math.max(0, max - 1);
         };
-        const waits: gsap.core.Tween[] = [];
+        const videoWaits: gsap.core.Tween[] = [];
+        const textWaits: gsap.core.Tween[] = [];
         let upDone = false;
         let lowSeen = false;
         let lowPlay = false;
-        const stopWaits = () => {
-          waits.forEach((tween) => tween.kill());
-          waits.length = 0;
+        const stopVideoWaits = () => {
+          videoWaits.forEach((tween) => tween.kill());
+          videoWaits.length = 0;
+        };
+        const stopTextWaits = () => {
+          textWaits.forEach((tween) => tween.kill());
+          textWaits.length = 0;
         };
         const park = () => {
-          stopWaits();
+          stopVideoWaits();
+          stopTextWaits();
           upDone = false;
           lowPlay = false;
+          resetVideo();
           [...upParts, ...lowParts].forEach(({ rise }) => rise.pause(0));
         };
         const tryLow = () => {
@@ -195,28 +314,47 @@ export function Titan() {
           if (!el) return false;
           return el.getBoundingClientRect().top < window.innerHeight * 0.85;
         };
-        const begin = () => {
-          park();
+        const beginVideo = () => {
+          stopVideoWaits();
+          const waitVideo = gsap.delayedCall(videoLag, () => {
+            const play = video.play();
+            startPaint();
+            if (play) play.catch(() => undefined);
+          });
+          videoWaits.push(waitVideo);
+        };
+        const beginText = () => {
+          stopTextWaits();
+          upDone = false;
+          lowPlay = false;
           lowSeen = lowIn();
-          const wait = gsap.delayedCall(letterLag, () => {
+          [...upParts, ...lowParts].forEach(({ rise }) => rise.pause(0));
+          const waitText = gsap.delayedCall(letterLag, () => {
             upParts.forEach(({ rise }) => rise.play());
             const after = gsap.delayedCall(spanOf(upParts), () => {
               upDone = true;
               if (lowIn()) lowSeen = true;
               tryLow();
             });
-            waits.push(after);
+            textWaits.push(after);
           });
-          waits.push(wait);
+          textWaits.push(waitText);
         };
         ScrollTrigger.create({
           trigger: root,
-          start: "top 85%",
+          start: "top 80%",
           end: "bottom top",
-          onEnter: begin,
-          onEnterBack: begin,
+          onEnter: beginVideo,
+          onEnterBack: beginVideo,
           onLeave: park,
           onLeaveBack: park,
+        });
+        ScrollTrigger.create({
+          trigger: root,
+          start: "center center",
+          end: "bottom top",
+          onEnter: beginText,
+          onEnterBack: beginText,
         });
         if (lowNodes[0]) {
           ScrollTrigger.create({
@@ -238,12 +376,20 @@ export function Titan() {
             },
           });
         }
+        resetVideo();
         return () => {
-          stopWaits();
+          stopVideoWaits();
+          stopTextWaits();
           held.forEach((tween) => tween.kill());
           [...upParts, ...lowParts].forEach(({ split }) => split.revert());
         };
       });
+
+      return () => {
+        window.removeEventListener("resize", onResize);
+        stopPaint();
+        video.pause();
+      };
     },
     { scope: rootRef },
   );
@@ -253,38 +399,75 @@ export function Titan() {
       ref={rootRef}
       data-titan
       aria-labelledby="titan-title"
-      className="relative z-10 w-full bg-[#070707]"
+      className="relative z-10 w-full overflow-hidden bg-[#070707]"
     >
-      <div className="@container relative mx-auto h-[55.556cqw] w-full max-w-360">
-        {titanBits.map((bit, index) => {
-          const className = `${bitClass(bit)}`;
-          const band = index < upCount ? "up" : "low";
-          if (bit.head) {
-            return (
-              <h2
-                key={bit.text}
-                id="titan-title"
-                data-band={band}
-                className={className}
-              >
-                {bit.text}
-              </h2>
-            );
-          }
-          return (
-            <p key={bit.text} data-band={band} className={className}>
-              {bit.text}
-            </p>
-          );
-        })}
-        <Image
-          src={flameImg.src}
-          alt="横から見た紫のチタンフレーム"
-          width={flameImg.width}
-          height={flameImg.height}
-          sizes="(min-width: 1440px) 778px, 54vw"
-          className="pointer-events-none absolute top-[19.861cqw] left-[20.833cqw] h-[14.444cqw] w-[54.028cqw] object-contain"
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <video
+          ref={videoRef}
+          className="absolute inset-0 h-full w-full object-cover opacity-0"
+          src={smokeSrc}
+          muted
+          playsInline
+          loop
+          preload="auto"
         />
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+        {showEdgeFade ? (
+          <>
+            <div
+              className="absolute inset-x-0 top-0 z-[1]"
+              style={{
+                height: edgeFade,
+                background: `linear-gradient(to bottom, ${backTone}, transparent)`,
+              }}
+            />
+            <div
+              className="absolute inset-x-0 bottom-0 z-[1]"
+              style={{
+                height: edgeFade,
+                background: `linear-gradient(to top, ${backTone}, transparent)`,
+              }}
+            />
+          </>
+        ) : null}
+      </div>
+      <div className="@container relative z-10 mx-auto h-[55.556cqw] w-full max-w-360">
+        <div
+          className="absolute inset-0"
+          style={
+            upTextShift
+              ? { transform: `translateY(${upTextShift}cqw)` }
+              : undefined
+          }
+        >
+          {titanBits.slice(0, upCount).map((bit) => {
+            const className = bitClass(bit);
+            if (bit.head) {
+              return (
+                <h2
+                  key={bit.text}
+                  id="titan-title"
+                  data-band="up"
+                  className={className}
+                >
+                  {bit.text}
+                </h2>
+              );
+            }
+            return (
+              <p key={bit.text} data-band="up" className={className}>
+                {bit.text}
+              </p>
+            );
+          })}
+        </div>
+        {showLowCopy
+          ? titanBits.slice(upCount).map((bit) => (
+              <p key={bit.text} data-band="low" className={bitClass(bit)}>
+                {bit.text}
+              </p>
+            ))
+          : null}
       </div>
     </section>
   );

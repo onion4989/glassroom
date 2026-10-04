@@ -124,12 +124,12 @@ export function FitIntro() {
       ref={rootRef}
       data-fit-intro
       aria-labelledby="fit-intro-title"
-      className="relative z-10 w-full overflow-hidden bg-[#070707]"
+      className="relative w-full overflow-hidden bg-[#070707]"
     >
       <div className="@container relative mx-auto h-[55.556cqw] w-full max-w-360">
         <h2
           id="fit-intro-title"
-          className="absolute top-[5cqw] left-[8.333cqw] cursor-default font-jp text-[6.667cqw] leading-none whitespace-nowrap text-white select-none"
+          className="absolute top-[5cqw] left-[8.333cqw] z-30 cursor-default font-jp text-[6.667cqw] leading-none whitespace-nowrap text-white select-none"
         >
           <span className="sr-only">{fitTitle}</span>
           <span ref={titleRef} aria-hidden="true" />
@@ -141,7 +141,7 @@ export function FitIntro() {
         </h2>
         <div
           ref={boxMoveRef}
-          className="absolute top-[34.722cqw] left-[55.417cqw] z-10 w-[36.25cqw]"
+          className="absolute top-[34.722cqw] left-[55.417cqw] z-30 w-[36.25cqw]"
         >
           <div
             ref={boxFadeRef}

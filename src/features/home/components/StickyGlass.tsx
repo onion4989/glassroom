@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRef } from "react";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
-const glassImg = {
+export const glassFrontImg = {
   src: "/assets/pages/top/hero/glass_front-normal.png",
   width: 620,
   height: 173,
@@ -43,15 +43,18 @@ export function StickyGlass() {
       ref={rootRef}
       className="pointer-events-none relative z-20 mt-[30px] w-full max-w-[620px]"
     >
-      <Image
-        src={glassImg.src}
-        alt="眼鏡の正面"
-        width={glassImg.width}
-        height={glassImg.height}
-        sizes="(min-width: 1024px) 620px, 100vw"
-        priority
-        className="h-auto w-full"
-      />
+      {/* pin 本体と分離し、フェード／移動が pin の transform と干渉しないようにする */}
+      <div data-sticky-fade className="w-full">
+        <Image
+          src={glassFrontImg.src}
+          alt="眼鏡の正面"
+          width={glassFrontImg.width}
+          height={glassFrontImg.height}
+          sizes="(min-width: 1024px) 620px, 100vw"
+          priority
+          className="h-auto w-full"
+        />
+      </div>
     </div>
   );
 }

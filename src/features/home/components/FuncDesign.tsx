@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useRef } from "react";
+import { glassFrontImg } from "@/features/home/components/StickyGlass";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 const artBase = 1440;
@@ -8,8 +10,15 @@ const startGrow = 384;
 const morphSec = 0.9;
 const afterSec = 0.6;
 const enterLag = 0.8;
+const enterStart = "top 85%";
+const leaveBackStart = "top 50%";
 const risePx = 16;
 const slidePx = 48;
+const stickyFadeSec = 1;
+const glassLag = 0.35;
+const glassSec = 1.35;
+const glassRestY = 50;
+const stickyRise = 24;
 const shrinkTo = 0.6;
 const coverBlur = "blur(12px)";
 const glowBg =
@@ -19,8 +28,9 @@ type FeatCard = {
   title: string;
   endGrow: number;
   face: string;
-  pic: string;
+  pic?: string;
   glow?: boolean;
+  glass?: boolean;
 };
 
 const featCards: FeatCard[] = [
@@ -34,8 +44,8 @@ const featCards: FeatCard[] = [
     title: "滑らかなオーバルフレーム",
     endGrow: 588,
     face: "bg-[#2f2f2f]",
-    pic: "right-0 bottom-0 left-0 h-[14.444cqw] rounded-[1.042cqw]",
     glow: true,
+    glass: true,
   },
   {
     title: "フィットするエッジ",
@@ -61,32 +71,63 @@ export function FuncDesign() {
       const glow = art.querySelector<HTMLElement>("[data-glow]");
       const labels = [...art.querySelectorAll<HTMLElement>("[data-label]")];
       const pics = [...art.querySelectorAll<HTMLElement>("[data-pic]")];
-      if (!glow || cards.length !== featCards.length) return;
+      const glass = art.querySelector<HTMLElement>("[data-glass]");
+      // pin 要素ではなく内側。pin の transform と y アニメが衝突しない。
+      const fade = document.querySelector<HTMLElement>("[data-sticky-fade]");
+      if (!glow || !glass || cards.length !== featCards.length) return;
 
       const scale = () => Math.min(art.clientWidth, artBase) / artBase;
       const ends = featCards.map((card) => card.endGrow);
-      const show = [...faces, glow, ...labels, ...pics];
+      const glassFrom = () => glassRestY + Math.max(glass.offsetHeight, 120) * 1.15;
+      const showSticky = () => {
+        if (fade) gsap.set(fade, { autoAlpha: 1, y: 0 });
+      };
+      const hideSticky = () => {
+        if (fade) gsap.set(fade, { autoAlpha: 0, y: 0 });
+      };
       const mm = gsap.matchMedia();
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
         gsap.set(art, { scale: 1, filter: "none" });
         gsap.set(cards, { flexGrow: (i) => ends[i], y: 0 });
-        gsap.set(show, { autoAlpha: 1, x: 0, y: 0 });
+        gsap.set([...faces, glow, ...labels, ...pics], {
+          autoAlpha: 1,
+          x: 0,
+          y: 0,
+        });
+        gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestY });
+        ScrollTrigger.create({
+          trigger: root,
+          start: enterStart,
+          end: "bottom top",
+          onEnter: hideSticky,
+          onEnterBack: hideSticky,
+          onLeave: hideSticky,
+        });
+        ScrollTrigger.create({
+          trigger: root,
+          start: leaveBackStart,
+          onLeaveBack: showSticky,
+        });
       });
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         let wait: gsap.core.Tween | null = null;
         let play: gsap.core.Timeline | null = null;
 
-        const stop = () => {
+        const clearWait = () => {
           wait?.kill();
-          play?.kill();
           wait = null;
+        };
+
+        const killPlay = () => {
+          clearWait();
+          play?.kill();
           play = null;
         };
 
-        const reset = () => {
-          stop();
+        const resetCards = () => {
+          killPlay();
           gsap.set(cards, {
             flexGrow: startGrow,
             y: () => risePx * scale(),
@@ -101,57 +142,131 @@ export function FuncDesign() {
             y: () => risePx * scale(),
             autoAlpha: 0,
           });
-        };
-
-        const begin = () => {
-          reset();
-          wait = gsap.delayedCall(enterLag, () => {
-            const tl = gsap.timeline();
-            play = tl;
-            cards.forEach((card, i) => {
-              tl.to(
-                card,
-                {
-                  y: 0,
-                  flexGrow: ends[i],
-                  duration: morphSec,
-                  ease: "power2.inOut",
-                },
-                0,
-              );
-            });
-            tl.to(
-              faces,
-              { autoAlpha: 1, duration: morphSec, ease: "power2.inOut" },
-              0,
-            );
-            tl.to(
-              glow,
-              { autoAlpha: 1, duration: morphSec, ease: "power2.inOut" },
-              0,
-            );
-            tl.to(
-              labels,
-              { x: 0, autoAlpha: 1, duration: afterSec, ease: "power2.out" },
-              morphSec,
-            );
-            tl.to(
-              pics,
-              { y: 0, autoAlpha: 1, duration: afterSec, ease: "power2.out" },
-              morphSec,
-            );
+          gsap.set(glass, {
+            y: glassFrom,
+            autoAlpha: 0,
           });
         };
 
-        reset();
+        const buildPlay = () => {
+          const tl = gsap.timeline();
+          cards.forEach((card, i) => {
+            tl.to(
+              card,
+              {
+                y: 0,
+                flexGrow: ends[i],
+                duration: morphSec,
+                ease: "power2.inOut",
+              },
+              0,
+            );
+          });
+          tl.to(
+            faces,
+            { autoAlpha: 1, duration: morphSec, ease: "power2.inOut" },
+            0,
+          );
+          tl.to(
+            glow,
+            { autoAlpha: 1, duration: morphSec, ease: "power2.inOut" },
+            0,
+          );
+          if (fade) {
+            // 順方向: フェードアウトしながら下へ。逆再生でフェードアップになる。
+            tl.to(
+              fade,
+              {
+                autoAlpha: 0,
+                y: stickyRise,
+                duration: stickyFadeSec,
+                ease: "power2.out",
+              },
+              0,
+            );
+          }
+          tl.to(
+            labels,
+            { x: 0, autoAlpha: 1, duration: afterSec, ease: "power2.out" },
+            morphSec,
+          );
+          tl.to(
+            pics,
+            { y: 0, autoAlpha: 1, duration: afterSec, ease: "power2.out" },
+            morphSec,
+          );
+          tl.to(
+            glass,
+            {
+              y: glassRestY,
+              autoAlpha: 1,
+              duration: glassSec,
+              ease: "power2.out",
+            },
+            glassLag,
+          );
+          return tl;
+        };
+
+        const begin = (fromTop: boolean) => {
+          clearWait();
+          // 既存タイムラインがあれば殺さず順再生（逆スクロールの途中復帰）。
+          if (play) {
+            if (play.progress() === 0 && play.reversed()) {
+              wait = gsap.delayedCall(enterLag, () => {
+                play?.restart();
+              });
+              return;
+            }
+            play.reversed(false);
+            return;
+          }
+
+          resetCards();
+          if (fromTop) showSticky();
+          else hideSticky();
+          wait = gsap.delayedCall(enterLag, () => {
+            play = buildPlay();
+          });
+        };
+
+        const leaveBack = () => {
+          clearWait();
+          // 入場タイムラインを逆再生。kill＋作り直しだと瞬間表示になりやすい。
+          if (play) {
+            play.reversed(true);
+            return;
+          }
+          // タイムラインが無いとき（下方向 leave 後など）は sticky だけフェードアップ。
+          resetCards();
+          if (!fade) return;
+          gsap.set(fade, { autoAlpha: 0, y: stickyRise });
+          play = gsap.timeline().to(fade, {
+            autoAlpha: 1,
+            y: 0,
+            duration: stickyFadeSec,
+            ease: "power2.out",
+          });
+        };
+
+        resetCards();
+        showSticky();
+        // 順方向: 従来どおり。逆方向の leaveBack は別 ST で早めに発火。
         ScrollTrigger.create({
           trigger: root,
-          start: "top 85%",
+          start: enterStart,
           end: "bottom top",
-          onEnter: begin,
-          onEnterBack: begin,
-          onLeave: reset,
-          onLeaveBack: reset,
+          onEnter: () => begin(true),
+          onEnterBack: () => begin(false),
+          onLeave: () => {
+            resetCards();
+            hideSticky();
+          },
+        });
+        ScrollTrigger.create({
+          trigger: root,
+          start: leaveBackStart,
+          onLeaveBack: leaveBack,
         });
 
         // Limited の出入りと同じ区間で、中身全体をスクロールに追従して縮める。
@@ -188,7 +303,7 @@ export function FuncDesign() {
         }
 
         return () => {
-          stop();
+          killPlay();
         };
       });
     },
@@ -239,11 +354,30 @@ export function FuncDesign() {
               >
                 {card.title}
               </p>
-              <div
-                data-pic
-                aria-hidden
-                className={`absolute z-10 bg-[#3a3a3a] motion-safe:opacity-0 ${card.pic}`}
-              />
+              {card.glass ? (
+                <div className="absolute inset-0 z-10 flex items-center justify-center">
+                  <div
+                    data-glass
+                    aria-hidden
+                    className="w-155 shrink-0 motion-safe:opacity-0"
+                  >
+                    <Image
+                      src={glassFrontImg.src}
+                      alt=""
+                      width={glassFrontImg.width}
+                      height={glassFrontImg.height}
+                      sizes="620px"
+                      className="h-auto w-full"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  data-pic
+                  aria-hidden
+                  className={`absolute z-10 bg-[#3a3a3a] motion-safe:opacity-0 ${card.pic}`}
+                />
+              )}
             </li>
           ))}
         </ul>

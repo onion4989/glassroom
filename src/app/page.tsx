@@ -12,10 +12,12 @@ export default function Home() {
       <SmoothScroll>
         <div data-page-stack className="relative">
           <Hero glass={<StickyGlass />} />
-          <FitIntro />
-          <Titan />
-          <FuncDesign />
-          <LimitedModel />
+          <div className="mt-[150px] flex flex-col gap-[150px]">
+            <FitIntro />
+            <Titan />
+            <FuncDesign />
+            <LimitedModel />
+          </div>
         </div>
       </SmoothScroll>
     </main>
