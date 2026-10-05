@@ -15,7 +15,7 @@ const showEdgeFade = true;
 const edgeFade = 120;
 /** 上帯テキストを下へずらす量（cqw）。0 で元位置に戻せる */
 const upTextShift = 11.5;
-const smokeSrc = "/assets/pages/top/titan/mv_smoke_loop.mp4";
+const smokeSrc = "/assets/pages/top/titan/mv_smoke_loop.webm";
 const cellStep = 6;
 const screenDeg = 22;
 const inkTone = "210, 210, 220";
