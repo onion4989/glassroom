@@ -16,10 +16,20 @@ const edgeFade = 120;
 /** 上帯テキストを下へずらす量（cqw）。0 で元位置に戻せる */
 const upTextShift = 11.5;
 const smokeSrc = "/assets/pages/top/titan/mv_smoke_loop.webm";
-const cellStep = 6;
+/** 網点ピッチ（px）。大きいほど軽い */
+const cellStep = 8;
 const screenDeg = 22;
 const inkTone = "210, 210, 220";
 const backTone = "#070707";
+/** 動画は 30fps なので描画もそれに合わせる */
+const paintFps = 30;
+const paintGap = 1000 / paintFps;
+/** 輝度→fillStyle の段階数（文字列生成を避ける） */
+const inkSteps = 32;
+const inkFills = Array.from({ length: inkSteps }, (_, i) => {
+  const lum = i / (inkSteps - 1);
+  return `rgba(${inkTone},${0.35 + lum * 0.65})`;
+});
 
 type TitanBit = {
   text: string;
@@ -140,10 +150,27 @@ function fitCanvas(canvas: HTMLCanvasElement, w: number, h: number) {
   }
 }
 
+type PaintKit = {
+  samp: HTMLCanvasElement;
+  sampCtx: CanvasRenderingContext2D;
+  drawCtx: CanvasRenderingContext2D;
+  cols: number;
+  rows: number;
+};
+
+function makePaintKit(canvas: HTMLCanvasElement): PaintKit | null {
+  const drawCtx = canvas.getContext("2d");
+  if (!drawCtx) return null;
+  const samp = document.createElement("canvas");
+  const sampCtx = samp.getContext("2d", { willReadFrequently: true });
+  if (!sampCtx) return null;
+  return { samp, sampCtx, drawCtx, cols: 0, rows: 0 };
+}
+
 function paintScreen(
   canvas: HTMLCanvasElement,
   video: HTMLVideoElement,
-  samp: HTMLCanvasElement,
+  kit: PaintKit,
 ) {
   // inline 固定幅だとリサイズ後に clientWidth が古いままになるため親を測る
   const box = canvas.parentElement;
@@ -153,16 +180,17 @@ function paintScreen(
   if (w < 2 || h < 2 || video.readyState < 2) return;
 
   fitCanvas(canvas, w, h);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  const { samp, sampCtx, drawCtx: ctx } = kit;
 
   const step = cellStep;
   const cols = Math.max(1, Math.ceil(w / step));
   const rows = Math.max(1, Math.ceil(h / step));
-  samp.width = cols;
-  samp.height = rows;
-  const sampCtx = samp.getContext("2d", { willReadFrequently: true });
-  if (!sampCtx) return;
+  if (kit.cols !== cols || kit.rows !== rows) {
+    samp.width = cols;
+    samp.height = rows;
+    kit.cols = cols;
+    kit.rows = rows;
+  }
 
   sampCtx.drawImage(video, 0, 0, cols, rows);
   const pix = sampCtx.getImageData(0, 0, cols, rows).data;
@@ -175,15 +203,16 @@ function paintScreen(
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
   const half = step * 0.5;
+  const inkMax = inkSteps - 1;
 
-  for (let y = half, row = 0; y < canvas.height; y += step, row++) {
-    for (let x = half, col = 0; x < canvas.width; x += step, col++) {
-      const i = (Math.min(rows - 1, row) * cols + Math.min(cols - 1, col)) * 4;
+  for (let y = half, row = 0; row < rows; y += step, row++) {
+    for (let x = half, col = 0; col < cols; x += step, col++) {
+      const i = (row * cols + col) * 4;
       const lum = (pix[i] * 0.299 + pix[i + 1] * 0.587 + pix[i + 2] * 0.114) / 255;
       const size = lum * step * 0.92;
       if (size < 0.6) continue;
       ctx.setTransform(cos, sin, -sin, cos, x, y);
-      ctx.fillStyle = `rgba(${inkTone},${0.35 + lum * 0.65})`;
+      ctx.fillStyle = inkFills[(lum * inkMax + 0.5) | 0]!;
       ctx.fillRect(-size / 2, -size / 2, size, size);
     }
   }
@@ -207,14 +236,21 @@ export function Titan() {
       canvas.style.width = "";
       canvas.style.height = "";
 
-      const samp = document.createElement("canvas");
+      const kit = makePaintKit(canvas);
+      if (!kit) return;
+
       let rafId = 0;
+      let lastPaint = 0;
       const stopPaint = () => {
         if (rafId) cancelAnimationFrame(rafId);
         rafId = 0;
+        lastPaint = 0;
       };
-      const tick = () => {
-        paintScreen(canvas, video, samp);
+      const tick = (now: number) => {
+        if (now - lastPaint >= paintGap) {
+          lastPaint = now;
+          paintScreen(canvas, video, kit);
+        }
         if (!video.paused && !video.ended) {
           rafId = requestAnimationFrame(tick);
         } else {
@@ -233,10 +269,10 @@ export function Titan() {
         } catch {
           /* ignore seek before ready */
         }
-        paintScreen(canvas, video, samp);
+        paintScreen(canvas, video, kit);
       };
       const onResize = () => {
-        paintScreen(canvas, video, samp);
+        paintScreen(canvas, video, kit);
       };
       const ro = new ResizeObserver(onResize);
       ro.observe(root);
@@ -245,7 +281,7 @@ export function Titan() {
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
         video.pause();
-        const showStill = () => paintScreen(canvas, video, samp);
+        const showStill = () => paintScreen(canvas, video, kit);
         if (video.readyState >= 2) showStill();
         else video.addEventListener("loadeddata", showStill, { once: true });
         return () => {

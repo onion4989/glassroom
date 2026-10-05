@@ -1,9 +1,11 @@
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { Detail } from "@/features/home/components/Detail";
 import { Feature } from "@/features/home/components/Feature";
 import { FitIntro } from "@/features/home/components/FitIntro";
 import { FuncDesign } from "@/features/home/components/FuncDesign";
 import { Hero } from "@/features/home/components/Hero";
-import { LimitedModel } from "@/features/home/components/LimitedModel";
+import { Model } from "@/features/home/components/Model";
+import { Sales } from "@/features/home/components/Sales";
 import { StickyGlass } from "@/features/home/components/StickyGlass";
 import { Titan } from "@/features/home/components/Titan";
 
@@ -13,12 +15,26 @@ export default function Home() {
       <SmoothScroll>
         <div data-page-stack className="relative">
           <Hero glass={<StickyGlass />} />
-          <div className="mt-[150px] flex flex-col gap-[150px]">
-            <FitIntro />
-            <Titan />
-            <Feature />
-            <FuncDesign />
-            <LimitedModel />
+          <div className="mt-[150px] flex flex-col">
+            <div className="mb-[150px]">
+              <FitIntro />
+            </div>
+            <div className="mb-[150px]">
+              <Titan />
+            </div>
+            <div className="mb-[150px]">
+              <Feature />
+            </div>
+            <div className="mb-[150px]">
+              <FuncDesign />
+            </div>
+            <div className="mb-[150px]">
+              <Model />
+            </div>
+            <div className="mb-[150px]">
+              <Detail />
+            </div>
+            <Sales />
           </div>
         </div>
       </SmoothScroll>

@@ -14,8 +14,6 @@ const risePx = 20;
 const glassLag = 0.35;
 const glassSec = 1.35;
 const glassRestY = 50;
-const shrinkTo = 0.6;
-const coverBlur = "blur(12px)";
 const rowCqw = 25;
 const designDir = "/assets/pages/top/design";
 const glowBg =
@@ -175,7 +173,6 @@ export function FuncDesign() {
       const mm = gsap.matchMedia();
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
-        gsap.set(art, { scale: 1, filter: "none" });
         clearCardPos();
         gsap.set(cards, { autoAlpha: 1, y: 0 });
         showFaces();
@@ -292,39 +289,6 @@ export function FuncDesign() {
           start: leaveBackStart,
           onLeaveBack: leaveBack,
         });
-
-        // Limited の出入りと同じ区間で、中身全体をスクロールに追従して縮める。
-        const limited = document.querySelector<HTMLElement>("[data-limited]");
-        if (limited) {
-          gsap.fromTo(
-            art,
-            { scale: 1, transformOrigin: "center center" },
-            {
-              scale: shrinkTo,
-              ease: "none",
-              scrollTrigger: {
-                trigger: limited,
-                start: "top 70%",
-                end: "top top",
-                scrub: true,
-              },
-            },
-          );
-          gsap.fromTo(
-            art,
-            { filter: "blur(0px)" },
-            {
-              filter: coverBlur,
-              ease: "none",
-              scrollTrigger: {
-                trigger: limited,
-                start: "top 50%",
-                end: "top top",
-                scrub: true,
-              },
-            },
-          );
-        }
 
         return () => {
           killPlay();
