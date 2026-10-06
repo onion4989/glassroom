@@ -15,6 +15,10 @@ const showEdgeFade = true;
 const edgeFade = 120;
 /** 上帯テキストを下へずらす量（cqw）。0 で元位置に戻せる */
 const upTextShift = 11.5;
+/** sticky と重ねる吸着点の縦位置（コンテナ top からの cqw） */
+const dockTopCqw = 40;
+/** 中央ロックのスクロール長さ（ビューポート高に対する割合） */
+const dockDwell = "+=40%";
 const smokeSrc = "/assets/pages/top/titan/mv_smoke_loop.webm";
 /** 網点ピッチ（px）。大きいほど軽い */
 const cellStep = 8;
@@ -421,8 +425,22 @@ export function Titan() {
             },
           });
         }
+        // sticky（画面中央）と重なったとき、短い pin で一度ロック。上下どちらでも再ロック。
+        const dock = root.querySelector<HTMLElement>("[data-titan-dock]");
+        let dockPin: ScrollTrigger | null = null;
+        if (dock) {
+          dockPin = ScrollTrigger.create({
+            trigger: dock,
+            start: "center center",
+            end: dockDwell,
+            pin: root,
+            pinSpacing: true,
+            anticipatePin: 1,
+          });
+        }
         resetVideo();
         return () => {
+          dockPin?.kill();
           stopVideoWaits();
           stopTextWaits();
           held.forEach((tween) => tween.kill());
@@ -444,9 +462,12 @@ export function Titan() {
       ref={rootRef}
       data-titan
       aria-labelledby="titan-title"
-      className="relative z-10 w-full overflow-hidden bg-[#070707]"
+      className="relative z-10 w-full bg-[#070707]"
     >
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden
+      >
         <video
           ref={videoRef}
           className="absolute inset-0 h-full w-full object-cover opacity-0"
@@ -477,6 +498,12 @@ export function Titan() {
         ) : null}
       </div>
       <div className="@container relative z-10 mx-auto h-[55.556cqw] w-full max-w-360">
+        <div
+          data-titan-dock
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 size-px -translate-x-1/2 -translate-y-1/2"
+          style={{ top: `${dockTopCqw}cqw` }}
+        />
         <div
           className="absolute inset-0"
           style={

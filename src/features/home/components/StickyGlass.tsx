@@ -11,7 +11,15 @@ export const glassFrontImg = {
 } as const;
 
 const coverBlur = "blur(12px)";
-const endScale = 358 / glassFrontImg.width;
+/** 縮小・追従の開始（Model 上端がこの位置に来たら） */
+const moveStart = "top 95%";
+/** 枠への吸着完了（normal 中心がビューポート中心） */
+const moveEnd = "center center";
+/** 一度渡したら、この進捗未満まで戻るまで sticky を復活させない */
+const handoffLatch = 0.92;
+const handoffRelease = 0.8;
+/** Model 左右眼鏡の入場トリガ（吸着完了時に model 要素へ一度通知） */
+export const modelHandoffEvent = "glassroom:model-handoff";
 
 export function StickyGlass() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -35,31 +43,30 @@ export function StickyGlass() {
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         if (!fade) return;
 
-        // Model（ノーマル枠）で sticky 終了。Detail には到達しない。
+        gsap.set(fade, {
+          transformOrigin: "center center",
+          x: 0,
+          y: 0,
+          scale: 1,
+          autoAlpha: 1,
+        });
+        if (normalImg) gsap.set(normalImg, { autoAlpha: 0 });
+
+        // pin は Model 枠付近まで。受け渡し後もしばらく維持してから外す。
         const endTrigger = normal ?? model ?? stack;
-        const st = ScrollTrigger.create({
+        const pin = ScrollTrigger.create({
           trigger: el,
           endTrigger,
           start: "center center",
           end: normal ? "center center" : "bottom bottom",
           pin: true,
           pinSpacing: false,
-          onLeave: () => {
-            if (!normalImg) return;
-            gsap.set(fade, { autoAlpha: 0 });
-            gsap.set(normalImg, { autoAlpha: 1 });
-          },
-          onEnterBack: () => {
-            if (!normalImg) return;
-            gsap.set(fade, { autoAlpha: 1 });
-            gsap.set(normalImg, { autoAlpha: 0 });
-          },
+          anticipatePin: 1,
         });
 
         let blurTl: gsap.core.Timeline | null = null;
         if (feature && model) {
           gsap.set(fade, { filter: "blur(0px)" });
-          // Feature 入場でボケ → Model 入場で解除
           blurTl = gsap
             .timeline({
               scrollTrigger: {
@@ -75,7 +82,6 @@ export function StickyGlass() {
               { filter: "blur(0px)" },
               { filter: coverBlur, duration: 1, ease: "none" },
             )
-            // filter を再 tween しない（同じ blur 値の再適用で一瞬 0 に戻るのを防ぐ）
             .to({}, { duration: 6 })
             .to(fade, { filter: "blur(0px)", duration: 1, ease: "none" });
         } else if (feature) {
@@ -104,38 +110,109 @@ export function StickyGlass() {
           }
         }
 
-        let scaleTl: gsap.core.Tween | null = null;
+        let moveSt: ScrollTrigger | null = null;
+        let handed = false;
+
+        const showSticky = () => {
+          gsap.set(fade, { autoAlpha: 1 });
+          if (normalImg) gsap.set(normalImg, { autoAlpha: 0 });
+        };
+
+        const showNormal = () => {
+          gsap.set(fade, { autoAlpha: 0 });
+          if (normalImg) gsap.set(normalImg, { autoAlpha: 1 });
+        };
+
+        const endScaleOf = () => {
+          if (!normal) return 358 / glassFrontImg.width;
+          const baseW = fade.offsetWidth || glassFrontImg.width;
+          const slotW = normal.offsetWidth || 358;
+          if (baseW <= 0) return 358 / glassFrontImg.width;
+          return slotW / baseW;
+        };
+
+        const placeAt = (p: number) => {
+          const scale = gsap.utils.interpolate(1, endScaleOf(), p);
+          if (!normal || p <= 0) {
+            gsap.set(fade, { x: 0, y: 0, scale });
+            return;
+          }
+          // pin 根の中心（画面中央）から枠中心への差分を進捗で割る
+          const base = el.getBoundingClientRect();
+          const slot = normal.getBoundingClientRect();
+          const dx = slot.left + slot.width / 2 - (base.left + base.width / 2);
+          const dy = slot.top + slot.height / 2 - (base.top + base.height / 2);
+          gsap.set(fade, { x: dx * p, y: dy * p, scale });
+        };
+
+        const syncHandoff = (p: number) => {
+          if (!normalImg) return;
+          if (!handed && p >= handoffLatch) {
+            handed = true;
+            showNormal();
+            // Model 入場トリガ（属性は後マウント時の取りこぼし防止）
+            model?.setAttribute("data-model-handed", "");
+            model?.dispatchEvent(
+              new CustomEvent(modelHandoffEvent, { bubbles: false }),
+            );
+            return;
+          }
+          if (handed && p < handoffRelease) {
+            handed = false;
+            model?.removeAttribute("data-model-handed");
+            showSticky();
+          }
+        };
+
         if (model && normal) {
-          gsap.set(fade, { transformOrigin: "center center", scale: 1 });
-          scaleTl = gsap.fromTo(
-            fade,
-            { scale: 1 },
-            {
-              scale: endScale,
-              ease: "none",
-              scrollTrigger: {
-                trigger: model,
-                start: "top 85%",
-                endTrigger: normal,
-                end: "center center",
-                scrub: true,
-              },
+          moveSt = ScrollTrigger.create({
+            trigger: model,
+            start: moveStart,
+            endTrigger: normal,
+            end: moveEnd,
+            scrub: true,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              const p = self.progress;
+              if (handed && p >= handoffRelease) {
+                // 受け渡し後は枠側を優先。sticky は隠したまま位置だけ最終へ
+                placeAt(1);
+                return;
+              }
+              placeAt(p);
+              syncHandoff(p);
             },
-          );
+            onRefresh: (self) => {
+              const p = self.progress;
+              if (handed) {
+                placeAt(1);
+                showNormal();
+                return;
+              }
+              placeAt(p);
+              syncHandoff(p);
+            },
+          });
         }
 
         return () => {
           blurTl?.scrollTrigger?.kill();
           blurTl?.kill();
-          scaleTl?.scrollTrigger?.kill();
-          scaleTl?.kill();
-          st.kill();
+          moveSt?.kill();
+          pin.kill();
+          gsap.set(fade, { clearProps: "transform,filter,opacity,visibility" });
         };
       });
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
         if (!fade) return;
-        gsap.set(fade, { filter: "none", scale: 1, autoAlpha: 1 });
+        gsap.set(fade, {
+          filter: "none",
+          scale: 1,
+          x: 0,
+          y: 0,
+          autoAlpha: 0,
+        });
         if (normalImg) gsap.set(normalImg, { autoAlpha: 1 });
       });
     },
@@ -148,7 +225,7 @@ export function StickyGlass() {
       className="pointer-events-none relative z-30 mt-[30px] w-full max-w-[620px]"
     >
       {/* pin 本体と分離し、フェード／移動が pin の transform と干渉しないようにする */}
-      <div data-sticky-fade className="w-full">
+      <div data-sticky-fade className="w-full will-change-transform">
         <Image
           src={glassFrontImg.src}
           alt="眼鏡の正面"

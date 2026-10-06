@@ -5,11 +5,14 @@ import { useRef } from "react";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 const artBase = 1440;
-const stageH = 800;
-const enterLag = 0.8;
-const enterStart = "top 60%";
+const artH = 800;
+const enterLag = 0.1;
+const enterStart = "top 30%";
 const expandDur = 1;
 const fadeDur = 0.6;
+const scrambleDur = 2.5;
+const scrambleSpeed = 0.3;
+const scrambleChars = "ﾊﾐﾋｰｳｼﾅﾓﾆｻ012345789";
 const shotBox = { w: 996, h: 400, x: 222, y: 200, r: 25 };
 const detailSrc = "/assets/pages/top/detail/img_detail.jpg";
 const detailAlt = "木のデスクに置かれたFREE FiTフレーム";
@@ -53,11 +56,15 @@ export function Detail() {
 
       const mm = gsap.matchMedia();
       const unit = () => (art.clientWidth || artBase) / artBase;
+      const decodeEls = () =>
+        panel.querySelectorAll<HTMLElement>("[data-scramble]");
 
-      // 幅は窓いっぱい。高さは 800px（入場後に一度きり拡大）。
+      // 幅は窓いっぱい。高さは 1440:800 を保ちリサイズに追従。
       const fullBox = () => {
         const viewW = document.documentElement.clientWidth;
         const stageW = stage.clientWidth || viewW;
+        const stageH =
+          stage.clientHeight || (viewW * artH) / artBase;
         return {
           x: (stageW - viewW) / 2,
           y: 0,
@@ -78,20 +85,26 @@ export function Detail() {
       };
 
       mm.add("(prefers-reduced-motion: reduce)", () => {
-        const end = fullBox();
-        gsap.set(shot, {
-          left: end.x,
-          top: end.y,
-          width: end.w,
-          height: end.h,
-          borderRadius: 0,
-        });
+        const apply = () => {
+          const end = fullBox();
+          gsap.set(shot, {
+            left: end.x,
+            top: end.y,
+            width: end.w,
+            height: end.h,
+            borderRadius: 0,
+          });
+        };
+        apply();
         gsap.set(panel, { autoAlpha: 1 });
+        window.addEventListener("resize", apply);
+        return () => window.removeEventListener("resize", apply);
       });
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         let wait: gsap.core.Tween | null = null;
         let expand: gsap.core.Timeline | null = null;
+        let decode: gsap.core.Tween | null = null;
         const prog = { p: 0 };
 
         const place = (p: number) => {
@@ -106,11 +119,28 @@ export function Detail() {
           });
         };
 
+        const runDecode = () => {
+          decode?.kill();
+          const els = decodeEls();
+          if (!els.length) return;
+          decode = gsap.to(els, {
+            duration: scrambleDur,
+            scrambleText: {
+              text: "{original}",
+              chars: scrambleChars,
+              speed: scrambleSpeed,
+            },
+            stagger: 0.08,
+          });
+        };
+
         const reset = () => {
           wait?.kill();
           wait = null;
           expand?.kill();
           expand = null;
+          decode?.kill();
+          decode = null;
           prog.p = 0;
           place(0);
           gsap.set(panel, { autoAlpha: 0 });
@@ -125,6 +155,7 @@ export function Detail() {
                   autoAlpha: 1,
                   duration: fadeDur,
                   ease: "power2.out",
+                  onStart: runDecode,
                 });
               },
             });
@@ -138,6 +169,8 @@ export function Detail() {
           });
         };
 
+        const onResize = () => place(prog.p);
+
         reset();
         ScrollTrigger.create({
           trigger: root,
@@ -145,10 +178,13 @@ export function Detail() {
           once: true,
           onEnter: begin,
         });
+        window.addEventListener("resize", onResize);
 
         return () => {
           wait?.kill();
           expand?.kill();
+          decode?.kill();
+          window.removeEventListener("resize", onResize);
         };
       });
     },
@@ -162,12 +198,8 @@ export function Detail() {
       aria-label="製品詳細"
       className="relative z-10 w-full bg-[#070707]"
     >
-      <div ref={artRef} className="@container mx-auto w-full max-w-360">
-        <div
-          ref={stageRef}
-          className="relative w-full"
-          style={{ height: stageH }}
-        >
+      <div ref={artRef} className="@container w-full">
+        <div ref={stageRef} className="relative h-[55.556cqw] w-full">
           <div
             ref={shotRef}
             className="absolute top-[13.889cqw] left-[15.417cqw] h-[27.778cqw] w-[69.167cqw] overflow-hidden rounded-[1.736cqw]"
@@ -181,10 +213,10 @@ export function Detail() {
             />
             <div
               ref={panelRef}
-              className="absolute inset-x-0 bottom-0 flex h-[32%] bg-black/70 motion-safe:opacity-0"
+              className="absolute inset-x-0 bottom-0 flex h-[32%] gap-[2.083cqw] px-[6.25cqw] bg-black/70 motion-safe:opacity-0"
             >
-              <SpecCol rows={leftSpecs} className="w-1/2 pl-[8.889cqw]" />
-              <SpecCol rows={rightSpecs} className="w-1/2 pl-[0.798cqw]" />
+              <SpecCol rows={leftSpecs} className="min-w-0 w-1/2" />
+              <SpecCol rows={rightSpecs} className="min-w-0 w-1/2" />
             </div>
           </div>
         </div>
@@ -202,7 +234,7 @@ function SpecCol({
 }) {
   return (
     <div
-      className={`grid h-full grid-rows-3 py-[2.778cqw] pr-[4cqw] ${className}`}
+      className={`grid h-full grid-rows-3 py-[2.778cqw] ${className}`}
     >
       {rows.map((row, i) => (
         <div
@@ -219,6 +251,7 @@ function SpecCol({
               {row.value.map((line) => (
                 <p
                   key={line}
+                  data-scramble
                   className="cursor-default font-jp text-[1.389cqw] leading-none whitespace-nowrap text-white select-none"
                 >
                   {line}
@@ -226,7 +259,10 @@ function SpecCol({
               ))}
             </div>
           ) : (
-            <p className="cursor-default font-jp text-[1.389cqw] leading-normal whitespace-nowrap text-white select-none">
+            <p
+              data-scramble
+              className="cursor-default font-jp text-[1.389cqw] leading-normal whitespace-nowrap text-white select-none"
+            >
               {row.value}
             </p>
           )}

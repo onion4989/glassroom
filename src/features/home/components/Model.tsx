@@ -2,17 +2,15 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { glassFrontImg } from "@/features/home/components/StickyGlass";
-import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import {
+  glassFrontImg,
+  modelHandoffEvent,
+} from "@/features/home/components/StickyGlass";
+import { gsap, useGSAP } from "@/lib/gsap";
 
-const artBase = 1440;
-const enterLag = 0.8;
-const enterStart = "top 60%";
-const zoomDur = 0.7;
-const tagDur = 0.55;
-const nameDur = 0.6;
-const tagDrop = 50;
-const nameRise = 100;
+const slideDur = 0.4;
+const tagDur = 0.35;
+const nameDur = 0.35;
 const edgeDur = 0.35;
 const glassBox = { w: 358, h: 100 } as const;
 const modelDir = "/assets/pages/top/model";
@@ -51,10 +49,9 @@ export function Model() {
       const root = rootRef.current;
       if (!root) return;
 
-      const art = root.querySelector<HTMLElement>("[data-art]");
-      if (!art) return;
+      const normal = root.querySelector<HTMLElement>("[data-model-normal]");
+      if (!normal) return;
 
-      const artScale = () => (art.clientWidth || artBase) / artBase;
       const mm = gsap.matchMedia();
 
       const sideEls = (key: SideKey): SideParts | null => {
@@ -89,8 +86,22 @@ export function Model() {
       const edgeB = (edges: HTMLElement[]) =>
         edges.find((el) => el.dataset.edge === "bottom");
 
+      /** sticky／ノーマル枠中心から眼鏡所定位置への差分（layout 基準） */
+      const fromSlotX = (glass: HTMLElement) => {
+        const slotCx = normal.offsetLeft + normal.offsetWidth / 2;
+        const glassCx = glass.offsetLeft + glass.offsetWidth / 2;
+        return slotCx - glassCx;
+      };
+
+      /** 眼鏡中心からテキスト所定位置への差分（layout 基準） */
+      const fromGlassY = (el: HTMLElement, glass: HTMLElement) => {
+        const glassCy = glass.offsetTop + glass.offsetHeight / 2;
+        const elCy = el.offsetTop + el.offsetHeight / 2;
+        return glassCy - elCy;
+      };
+
       mm.add("(prefers-reduced-motion: reduce)", () => {
-        gsap.set([amber.glass, gray.glass], { scale: 1, autoAlpha: 1 });
+        gsap.set([amber.glass, gray.glass], { x: 0, autoAlpha: 1 });
         gsap.set([amber.tag, gray.tag, amber.name, gray.name], {
           autoAlpha: 1,
           y: 0,
@@ -110,18 +121,21 @@ export function Model() {
       });
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        let wait: gsap.core.Tween | null = null;
         let play: gsap.core.Timeline | null = null;
+        let started = false;
 
         const hideSide = (side: SideParts) => {
-          gsap.set(side.glass, { scale: 0.3, autoAlpha: 0 });
+          gsap.set(side.glass, {
+            x: () => fromSlotX(side.glass),
+            autoAlpha: 0,
+          });
           gsap.set(side.tag, {
             autoAlpha: 0,
-            y: () => -tagDrop * artScale(),
+            y: () => fromGlassY(side.tag, side.glass),
           });
           gsap.set(side.name, {
             autoAlpha: 0,
-            y: () => nameRise * artScale(),
+            y: () => fromGlassY(side.name, side.glass),
           });
           const l = edgeL(side.edges);
           const t = edgeT(side.edges);
@@ -133,27 +147,83 @@ export function Model() {
           if (b) gsap.set(b, { scaleX: 0 });
         };
 
-        const addSide = (
-          tl: gsap.core.Timeline,
-          side: SideParts,
-          at: number | string,
-        ) => {
-          const l = edgeL(side.edges);
-          const t = edgeT(side.edges);
-          const r = edgeR(side.edges);
-          const b = edgeB(side.edges);
+        /** 左右同時。left → top → right → bottom */
+        const drawEdges = (tl: gsap.core.Timeline, at: number | string) => {
+          const verts = (pick: (e: HTMLElement[]) => HTMLElement | undefined) =>
+            [pick(amber.edges), pick(gray.edges)].filter(
+              (el): el is HTMLElement => !!el,
+            );
+          const lefts = verts(edgeL);
+          const tops = verts(edgeT);
+          const rights = verts(edgeR);
+          const bottoms = verts(edgeB);
+          if (lefts.length) {
+            tl.to(
+              lefts,
+              { scaleY: 1, duration: edgeDur, ease: "power1.inOut" },
+              at,
+            );
+          }
+          if (tops.length) {
+            tl.to(
+              tops,
+              { scaleX: 1, duration: edgeDur, ease: "power1.inOut" },
+              ">",
+            );
+          }
+          if (rights.length) {
+            tl.to(
+              rights,
+              { scaleY: 1, duration: edgeDur, ease: "power1.inOut" },
+              ">",
+            );
+          }
+          if (bottoms.length) {
+            tl.to(
+              bottoms,
+              { scaleX: 1, duration: edgeDur, ease: "power1.inOut" },
+              ">",
+            );
+          }
+        };
+
+        const reset = () => {
+          play?.kill();
+          play = null;
+          started = false;
+          hideSide(amber);
+          hideSide(gray);
+        };
+
+        const begin = () => {
+          if (started || play) return;
+          started = true;
+          const tl = gsap.timeline();
+          play = tl;
+
           tl.to(
-            side.glass,
+            amber.glass,
             {
-              scale: 1,
+              x: 0,
               autoAlpha: 1,
-              duration: zoomDur,
+              duration: slideDur,
               ease: "power2.out",
             },
-            at,
+            0,
           );
           tl.to(
-            side.tag,
+            gray.glass,
+            {
+              x: 0,
+              autoAlpha: 1,
+              duration: slideDur,
+              ease: "power2.out",
+            },
+            0,
+          );
+
+          tl.to(
+            amber.tag,
             {
               y: 0,
               autoAlpha: 1,
@@ -162,75 +232,48 @@ export function Model() {
             },
             ">",
           );
-          if (l) {
-            tl.to(
-              l,
-              { scaleY: 1, duration: edgeDur, ease: "power1.inOut" },
-              "<",
-            );
-          }
-          if (t) {
-            tl.to(
-              t,
-              { scaleX: 1, duration: edgeDur, ease: "power1.inOut" },
-              ">",
-            );
-          }
-          if (r) {
-            tl.to(
-              r,
-              { scaleY: 1, duration: edgeDur, ease: "power1.inOut" },
-              ">",
-            );
-          }
-          if (b) {
-            tl.to(
-              b,
-              { scaleX: 1, duration: edgeDur, ease: "power1.inOut" },
-              ">",
-            );
-          }
           tl.to(
-            side.name,
+            gray.tag,
+            {
+              y: 0,
+              autoAlpha: 1,
+              duration: tagDur,
+              ease: "power2.out",
+            },
+            "<",
+          );
+          tl.to(
+            amber.name,
             {
               y: 0,
               autoAlpha: 1,
               duration: nameDur,
               ease: "power2.out",
             },
-            ">",
+            "<",
           );
-        };
+          tl.to(
+            gray.name,
+            {
+              y: 0,
+              autoAlpha: 1,
+              duration: nameDur,
+              ease: "power2.out",
+            },
+            "<",
+          );
 
-        const reset = () => {
-          wait?.kill();
-          wait = null;
-          play?.kill();
-          play = null;
-          hideSide(amber);
-          hideSide(gray);
-        };
-
-        const begin = () => {
-          if (play || wait) return;
-          wait = gsap.delayedCall(enterLag, () => {
-            const tl = gsap.timeline();
-            play = tl;
-            addSide(tl, amber, 0);
-            addSide(tl, gray, ">");
-          });
+          // 限定モデルのスライドイン直後に枠線
+          drawEdges(tl, ">");
         };
 
         reset();
-        ScrollTrigger.create({
-          trigger: root,
-          start: enterStart,
-          once: true,
-          onEnter: begin,
-        });
+        // sticky 吸着完了で入場（遅延なし・一度きり）
+        root.addEventListener(modelHandoffEvent, begin);
+        if (root.hasAttribute("data-model-handed")) begin();
 
         return () => {
-          wait?.kill();
+          root.removeEventListener(modelHandoffEvent, begin);
           play?.kill();
         };
       });
@@ -374,7 +417,7 @@ function SideGlass({
     <div
       data-side={side}
       data-part="glass"
-      className={`absolute top-[34.583cqw] h-[6.944cqw] w-[24.861cqw] origin-center motion-safe:opacity-0 ${className}`}
+      className={`absolute top-[34.583cqw] h-[6.944cqw] w-[24.861cqw] will-change-transform motion-safe:opacity-0 ${className}`}
     >
       <Image
         src={src}

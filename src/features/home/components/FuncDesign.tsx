@@ -7,9 +7,9 @@ import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 const artBase = 1440;
 const morphSec = 0.65;
-const enterLag = 0.8;
-const enterStart = "top 60%";
-const leaveBackStart = "top 50%";
+const enterLag = 0;
+const enterStart = "top 20%";
+const leaveBackStart = "top 15%";
 const risePx = 20;
 const glassLag = 0.35;
 const glassSec = 1.35;

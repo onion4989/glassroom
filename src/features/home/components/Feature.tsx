@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 const assetDir = "/assets/pages/top/feature";
-const enterLag = 1;
-const cardDur = 0.7;
+const enterLag = 0.8;
+const cardDur = 0.8;
 const cardStep = 0.15;
-const movePx = 80;
-const enterStart = "top 85%";
+const movePx = 100;
+const enterStart = "top 30%";
 /** Card1 → Card4 で下方向の視差を強める（px） */
 const shiftY = [20, 80, 140, 200];
 
@@ -68,19 +68,50 @@ export function Feature() {
       });
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.set(cards, { y: movePx, autoAlpha: 0 });
-        gsap.to(cards, {
-          y: 0,
-          autoAlpha: 1,
-          duration: cardDur,
-          stagger: cardStep,
-          delay: enterLag,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: root,
-            start: enterStart,
-            once: true,
-          },
+        let wait: gsap.core.Tween | null = null;
+        let play: gsap.core.Tween | null = null;
+
+        const clearWait = () => {
+          wait?.kill();
+          wait = null;
+        };
+
+        const killPlay = () => {
+          clearWait();
+          play?.kill();
+          play = null;
+        };
+
+        const resetCards = () => {
+          killPlay();
+          gsap.set(cards, {
+            y: movePx,
+            autoAlpha: 0,
+          });
+        };
+
+        const begin = () => {
+          resetCards();
+          wait = gsap.delayedCall(enterLag, () => {
+            play = gsap.to(cards, {
+              y: 0,
+              autoAlpha: 1,
+              duration: cardDur,
+              stagger: cardStep,
+              ease: "elastic.out(1, 0.6)",
+            });
+          });
+        };
+
+        resetCards();
+        ScrollTrigger.create({
+          trigger: root,
+          start: enterStart,
+          end: "bottom top",
+          onEnter: begin,
+          onEnterBack: begin,
+          onLeave: resetCards,
+          onLeaveBack: resetCards,
         });
 
         layers.forEach((layer, i) => {
@@ -101,6 +132,10 @@ export function Feature() {
             },
           );
         });
+
+        return () => {
+          killPlay();
+        };
       });
     },
     { scope: rootRef },

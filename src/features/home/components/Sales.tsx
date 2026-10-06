@@ -17,6 +17,7 @@ const edgeDur = 1.1;
 const fadeDur = 0.45;
 const edgeFade = 120;
 const backTone = "#070707";
+const arrowSrc = "/assets/pages/top/sales/ic_top_sales_arrow-r.svg";
 
 export function Sales() {
   const rootRef = useRef<HTMLElement>(null);
@@ -217,7 +218,7 @@ export function Sales() {
     >
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div
-          className="absolute inset-0 opacity-[0.18]"
+          className="absolute inset-0 opacity-30"
           style={{
             backgroundImage:
               "linear-gradient(to right, rgba(255,255,255,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.22) 1px, transparent 1px)",
@@ -225,39 +226,39 @@ export function Sales() {
           }}
         />
         <div
-          className="absolute inset-x-0 top-0 z-[1]"
+          className="absolute inset-x-0 top-0 z-1"
           style={{
             height: edgeFade,
             background: `linear-gradient(to bottom, ${backTone}, transparent)`,
           }}
         />
         <div
-          className="absolute inset-x-0 bottom-0 z-[1]"
+          className="absolute inset-x-0 bottom-0 z-1"
           style={{
             height: edgeFade,
             background: `linear-gradient(to top, ${backTone}, transparent)`,
           }}
         />
       </div>
-      <div className="@container relative z-10 mx-auto flex w-full max-w-360 flex-col items-center px-[8.333cqw] py-[8.333cqw]">
+      <div className="@container relative z-10 mx-auto flex w-full max-w-360 flex-col items-center px-[8.333cqw] py-[10.417cqw]">
         <h2
           id="sales-title"
           data-part="label"
-          className="cursor-default font-jp text-[2.5cqw] leading-none tracking-[0.08em] text-white select-none motion-safe:opacity-0"
+          className="cursor-default font-jp text-[3.333cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
         >
           累計販売本数
         </h2>
 
-        <div className="mt-[2.778cqw] flex items-start justify-center gap-[0.694cqw]">
+        <div className="mt-[1.181cqw] flex items-start justify-center gap-[0.625cqw]">
           <p
             data-part="count"
-            className="cursor-default font-brand text-[10.417cqw] leading-none font-bold tracking-[0.02em] text-white tabular-nums select-none"
+            className="cursor-default font-brand text-[6.667cqw] leading-none font-normal tracking-[0.2em] text-white tabular-nums select-none"
           >
             0
           </p>
           <span
             data-part="suffix"
-            className="mt-[1.389cqw] cursor-default font-jp text-[1.667cqw] leading-none text-white select-none motion-safe:opacity-0"
+            className="mt-[3.264cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
           >
             以上
           </span>
@@ -265,28 +266,29 @@ export function Sales() {
 
         <p
           data-part="asof"
-          className="mt-[1.736cqw] cursor-default font-jp text-[1.25cqw] leading-none text-white select-none motion-safe:opacity-0"
+          className="mt-[2.153cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
         >
           ※2026年9月現在
         </p>
 
         <a
           href="#"
-          className="relative mt-[4.167cqw] flex h-[4.167cqw] w-[27.778cqw] items-center justify-center rounded-full"
+          className="relative mt-[4.028cqw] flex h-[6.667cqw] w-[33.542cqw] items-center justify-center rounded-full"
         >
           <svg
             aria-hidden
-            className="pointer-events-none absolute inset-0 size-full"
-            viewBox="0 0 400 60"
+            className="pointer-events-none absolute inset-0 size-full overflow-visible"
+            viewBox="0 0 483 96"
             preserveAspectRatio="none"
+            overflow="visible"
           >
-            {/* 左端中央から時計回りに一周描く */}
+            {/* 左端中央から時計回りに一周描く（stroke クリップ回避で 1px 内側） */}
             <path
               data-part="stroke"
-              d="M 0.5 30 A 29.5 29.5 0 0 1 30 0.5 H 370 A 29.5 29.5 0 0 1 399.5 30 A 29.5 29.5 0 0 1 370 59.5 H 30 A 29.5 29.5 0 0 1 0.5 30"
+              d="M 1 48 A 47 47 0 0 1 48 1 H 435 A 47 47 0 0 1 482 48 A 47 47 0 0 1 435 95 H 48 A 47 47 0 0 1 1 48"
               fill="none"
               stroke="white"
-              strokeWidth="1.5"
+              strokeWidth="1"
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeDasharray={9999}
@@ -296,22 +298,29 @@ export function Sales() {
           </svg>
           <span
             data-part="btn-text"
-            className="cursor-pointer font-jp text-[1.389cqw] leading-none tracking-[0.06em] text-white select-none motion-safe:opacity-0"
+            className="cursor-pointer font-jp text-[1.667cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
           >
             お問い合わせはこちらから
           </span>
           <span
             data-part="arrow"
             aria-hidden
-            className="absolute right-[1.736cqw] font-jp text-[1.389cqw] leading-none text-white motion-safe:opacity-0"
+            className="absolute right-[1.944cqw] flex h-[1.25cqw] w-[0.764cqw] items-center justify-center motion-safe:opacity-0"
           >
-            &gt;
+            {/* next/image は既定で SVG 不可のため img */}
+            <img
+              src={arrowSrc}
+              alt=""
+              width={11}
+              height={18}
+              className="size-full"
+            />
           </span>
         </a>
 
         <p
           data-part="tip"
-          className="mt-[2.778cqw] cursor-default text-center font-jp text-[1.25cqw] leading-[1.6] text-white select-none motion-safe:opacity-0"
+          className="mt-[1.111cqw] cursor-default text-center font-jp text-[1.111cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
         >
           在庫のご確認・ご予約、などお気軽にご相談ください。
         </p>

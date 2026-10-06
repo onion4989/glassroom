@@ -2,6 +2,7 @@ import { SmoothScroll } from "@/components/SmoothScroll";
 import { Detail } from "@/features/home/components/Detail";
 import { Feature } from "@/features/home/components/Feature";
 import { FitIntro } from "@/features/home/components/FitIntro";
+import { Footer } from "@/features/home/components/Footer";
 import { FuncDesign } from "@/features/home/components/FuncDesign";
 import { Hero } from "@/features/home/components/Hero";
 import { Model } from "@/features/home/components/Model";
@@ -34,7 +35,10 @@ export default function Home() {
             <div className="mb-[150px]">
               <Detail />
             </div>
-            <Sales />
+            <div className="mb-[150px]">
+              <Sales />
+            </div>
+            <Footer />
           </div>
         </div>
       </SmoothScroll>
