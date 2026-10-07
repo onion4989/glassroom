@@ -20,6 +20,23 @@ const handoffLatch = 0.92;
 const handoffRelease = 0.8;
 /** Model 左右眼鏡の入場トリガ（吸着完了時に model 要素へ一度通知） */
 export const modelHandoffEvent = "glassroom:model-handoff";
+/** FuncDesign 吸着完了／解除（detail.docked） */
+export const funcDockEvent = "glassroom:func-dock";
+
+/** FuncDesign 中央 box: 入り込み完了〜吸着の進捗帯 */
+const dockEnterEnd = 0.28;
+const dockHoldEnd = 0.72;
+const dockLatch = 0.24;
+const dockRelease = 0.76;
+/** イベント解除（入り込み途中まで戻ったら） */
+const dockEventRelease = 0.12;
+/** box 内眼鏡の静止 y（FuncDesign と揃える） */
+const dockRestY = 50;
+const dockEnterScale = 1.22;
+const dockEjectScale = 1.18;
+const dockEjectY = -72;
+/** 中央吸着の短い pin（Titan と同型） */
+const dockDwell = "+=40%";
 
 export function StickyGlass() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -38,6 +55,9 @@ export function StickyGlass() {
       const normalImg = stack.querySelector<HTMLElement>(
         "[data-model-normal-img]",
       );
+      const funcDesign = stack.querySelector<HTMLElement>("[data-func-design]");
+      const funcDock = stack.querySelector<HTMLElement>("[data-func-dock]");
+      const funcGlass = stack.querySelector<HTMLElement>("[data-func-glass]");
 
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
@@ -51,6 +71,14 @@ export function StickyGlass() {
           autoAlpha: 1,
         });
         if (normalImg) gsap.set(normalImg, { autoAlpha: 0 });
+        if (funcGlass) {
+          gsap.set(funcGlass, {
+            transformOrigin: "center center",
+            y: dockRestY,
+            scale: 1,
+            autoAlpha: 0,
+          });
+        }
 
         // pin は Model 枠付近まで。受け渡し後もしばらく維持してから外す。
         const endTrigger = normal ?? model ?? stack;
@@ -65,15 +93,35 @@ export function StickyGlass() {
         });
 
         let blurTl: gsap.core.Timeline | null = null;
-        if (feature && model) {
+        // Feature 通過中にぼかし、FuncDesign 吸着の前に戻す（Model だけのときは従来）。
+        if (feature && (funcDock || model)) {
           gsap.set(fade, { filter: "blur(0px)" });
           blurTl = gsap
             .timeline({
               scrollTrigger: {
                 trigger: feature,
-                endTrigger: model,
+                endTrigger: funcDock ?? model ?? undefined,
                 start: "top 70%",
-                end: "top 55%",
+                end: funcDock ? "center 80%" : "top 55%",
+                scrub: true,
+              },
+            })
+            .fromTo(
+              fade,
+              { filter: "blur(0px)" },
+              { filter: coverBlur, duration: 1, ease: "none" },
+            )
+            .to({}, { duration: funcDock ? 3 : 6 })
+            .to(fade, { filter: "blur(0px)", duration: 1, ease: "none" });
+        } else if (feature && funcDesign) {
+          gsap.set(fade, { filter: "blur(0px)" });
+          blurTl = gsap
+            .timeline({
+              scrollTrigger: {
+                trigger: feature,
+                endTrigger: funcDesign,
+                start: "top 70%",
+                end: "bottom top",
                 scrub: true,
               },
             })
@@ -84,34 +132,14 @@ export function StickyGlass() {
             )
             .to({}, { duration: 6 })
             .to(fade, { filter: "blur(0px)", duration: 1, ease: "none" });
-        } else if (feature) {
-          const funcDesign = stack.querySelector<HTMLElement>(
-            "[data-func-design]",
-          );
-          if (funcDesign) {
-            gsap.set(fade, { filter: "blur(0px)" });
-            blurTl = gsap
-              .timeline({
-                scrollTrigger: {
-                  trigger: feature,
-                  endTrigger: funcDesign,
-                  start: "top 70%",
-                  end: "bottom top",
-                  scrub: true,
-                },
-              })
-              .fromTo(
-                fade,
-                { filter: "blur(0px)" },
-                { filter: coverBlur, duration: 1, ease: "none" },
-              )
-              .to({}, { duration: 6 })
-              .to(fade, { filter: "blur(0px)", duration: 1, ease: "none" });
-          }
         }
 
         let moveSt: ScrollTrigger | null = null;
+        let dockSt: ScrollTrigger | null = null;
+        let dockPin: ScrollTrigger | null = null;
         let handed = false;
+        let docked = false;
+        let dockFired = false;
 
         const showSticky = () => {
           gsap.set(fade, { autoAlpha: 1 });
@@ -121,6 +149,31 @@ export function StickyGlass() {
         const showNormal = () => {
           gsap.set(fade, { autoAlpha: 0 });
           if (normalImg) gsap.set(normalImg, { autoAlpha: 1 });
+        };
+
+        const syncDockEvent = (p: number) => {
+          if (!funcDesign) return;
+          if (!dockFired && p >= dockLatch) {
+            dockFired = true;
+            funcDesign.setAttribute("data-func-docked", "");
+            funcDesign.dispatchEvent(
+              new CustomEvent(funcDockEvent, {
+                bubbles: false,
+                detail: { docked: true },
+              }),
+            );
+            return;
+          }
+          if (dockFired && p < dockEventRelease) {
+            dockFired = false;
+            funcDesign.removeAttribute("data-func-docked");
+            funcDesign.dispatchEvent(
+              new CustomEvent(funcDockEvent, {
+                bubbles: false,
+                detail: { docked: false },
+              }),
+            );
+          }
         };
 
         const endScaleOf = () => {
@@ -160,9 +213,112 @@ export function StickyGlass() {
           if (handed && p < handoffRelease) {
             handed = false;
             model?.removeAttribute("data-model-handed");
-            showSticky();
+            if (!docked) showSticky();
           }
         };
+
+        const placeDock = (p: number) => {
+          if (!funcGlass || handed) return;
+
+          if (p <= 0) {
+            docked = false;
+            syncDockEvent(0);
+            gsap.set(funcGlass, {
+              y: dockRestY,
+              scale: dockEnterScale,
+              autoAlpha: 0,
+            });
+            if (!handed) {
+              gsap.set(fade, { autoAlpha: 1, x: 0, y: 0, scale: 1 });
+            }
+            return;
+          }
+
+          if (p < dockEnterEnd) {
+            const t = p / dockEnterEnd;
+            const ease = gsap.parseEase("power2.out")(t);
+            docked = p >= dockLatch;
+            syncDockEvent(p);
+            gsap.set(funcGlass, {
+              y: gsap.utils.interpolate(0, dockRestY, ease),
+              scale: gsap.utils.interpolate(dockEnterScale, 1, ease),
+              autoAlpha: ease,
+            });
+            // filter は blurTl 専任（ここだと上スクロール時にぼかしを潰す）
+            gsap.set(fade, {
+              autoAlpha: 1 - ease,
+              x: 0,
+              y: 0,
+              scale: 1,
+            });
+            return;
+          }
+
+          if (p < dockHoldEnd) {
+            docked = true;
+            syncDockEvent(p);
+            gsap.set(funcGlass, {
+              y: dockRestY,
+              scale: 1,
+              autoAlpha: 1,
+            });
+            gsap.set(fade, {
+              autoAlpha: 0,
+              x: 0,
+              y: 0,
+              scale: 1,
+            });
+            return;
+          }
+
+          const t = (p - dockHoldEnd) / (1 - dockHoldEnd);
+          const ease = gsap.parseEase("power2.in")(t);
+          docked = p < dockRelease;
+          // 弾き出し中も detail 入場は維持（解除は上スクロールで入り込み前に戻ったとき）
+          syncDockEvent(p);
+          gsap.set(funcGlass, {
+            y: gsap.utils.interpolate(dockRestY, dockEjectY, ease),
+            scale: gsap.utils.interpolate(1, dockEjectScale, ease),
+            autoAlpha: 1 - ease,
+          });
+          if (!handed) {
+            gsap.set(fade, {
+              autoAlpha: ease,
+              x: 0,
+              y: 0,
+              scale: 1,
+            });
+          }
+        };
+
+        if (funcDock && funcGlass) {
+          // 中央 box が画面中央を通過する前後で、入り→吸着→弾き出し。
+          dockSt = ScrollTrigger.create({
+            trigger: funcDock,
+            start: "center 80%",
+            end: "center 20%",
+            scrub: true,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              placeDock(self.progress);
+            },
+            onRefresh: (self) => {
+              placeDock(self.progress);
+            },
+          });
+        }
+
+        // 吸着中は section を短く止め、見出しと box の相対位置を固定する。
+        if (funcDock && funcDesign) {
+          dockPin = ScrollTrigger.create({
+            trigger: funcDock,
+            start: "center center",
+            end: dockDwell,
+            pin: funcDesign,
+            pinSpacing: true,
+            anticipatePin: 1,
+          });
+        }
 
         if (model && normal) {
           moveSt = ScrollTrigger.create({
@@ -179,6 +335,10 @@ export function StickyGlass() {
                 placeAt(1);
                 return;
               }
+              if (docked && p < handoffRelease) {
+                // FuncDesign 吸着中は Model 追従を始めない
+                return;
+              }
               placeAt(p);
               syncHandoff(p);
             },
@@ -189,6 +349,7 @@ export function StickyGlass() {
                 showNormal();
                 return;
               }
+              if (docked) return;
               placeAt(p);
               syncHandoff(p);
             },
@@ -198,9 +359,16 @@ export function StickyGlass() {
         return () => {
           blurTl?.scrollTrigger?.kill();
           blurTl?.kill();
+          dockPin?.kill();
+          dockSt?.kill();
           moveSt?.kill();
           pin.kill();
           gsap.set(fade, { clearProps: "transform,filter,opacity,visibility" });
+          if (funcGlass) {
+            gsap.set(funcGlass, {
+              clearProps: "transform,opacity,visibility",
+            });
+          }
         };
       });
 
@@ -214,6 +382,13 @@ export function StickyGlass() {
           autoAlpha: 0,
         });
         if (normalImg) gsap.set(normalImg, { autoAlpha: 1 });
+        if (funcGlass) {
+          gsap.set(funcGlass, {
+            y: dockRestY,
+            scale: 1,
+            autoAlpha: 1,
+          });
+        }
       });
     },
     { scope: rootRef },

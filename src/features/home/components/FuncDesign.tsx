@@ -2,18 +2,32 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { glassFrontImg } from "@/features/home/components/StickyGlass";
+import {
+  funcDockEvent,
+  glassFrontImg,
+} from "@/features/home/components/StickyGlass";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 const artBase = 1440;
 const morphSec = 0.65;
+/** 左→中央→右の拡大開始ずれ */
+const morphStep = 0.12;
 const enterLag = 0;
-const enterStart = "top 20%";
-const leaveBackStart = "top 15%";
+/** 中央 box 吸着より前にカード整列を終わらせる */
+const enterStart = "top 45%";
+const leaveBackStart = "top 30%";
+/** leaveBack 抑制: dock 中心が画面内にあるあいだはカードを消さない */
+const dockKeepTop = 0.05;
+const dockKeepBot = 1;
 const risePx = 20;
-const glassLag = 0.35;
-const glassSec = 1.35;
+/** StickyGlass の dockRestY と揃える（入場は Sticky 側） */
 const glassRestY = 50;
+/** 吸着後のラベル／画像入場 */
+const labelDur = 0.35;
+const picDur = 0.4;
+const detailStep = 0.2;
+const labelFromX = 28;
+const picFromY = 36;
 const rowCqw = 25;
 const designDir = "/assets/pages/top/design";
 const glowBg =
@@ -91,12 +105,27 @@ export function FuncDesign() {
       const labels = [...art.querySelectorAll<HTMLElement>("[data-label]")];
       const pics = [...art.querySelectorAll<HTMLElement>("[data-pic]")];
       const glass = art.querySelector<HTMLElement>("[data-glass]");
-      if (!list || !glow || !glass || cards.length !== featCards.length) return;
+      if (
+        !list ||
+        !glow ||
+        !glass ||
+        cards.length !== featCards.length ||
+        labels.length !== 3 ||
+        pics.length !== 2
+      ) {
+        return;
+      }
+
+      // DOM 順: 左ラベル / 中央ラベル / 右ラベル、左画像 / 右画像
+      const labelL = labels[0];
+      const labelC = labels[1];
+      const labelR = labels[2];
+      const picL = pics[0];
+      const picR = pics[1];
 
       const ends = featCards.map((card) => card.endGrow);
       const artScale = () => art.clientWidth / artBase;
       const rowH = () => (rowCqw / 100) * art.clientWidth;
-      const glassFrom = () => glassRestY + Math.max(glass.offsetHeight, 120) * 1.15;
 
       const clearCardPos = () => {
         gsap.set(list, { clearProps: "height" });
@@ -163,11 +192,19 @@ export function FuncDesign() {
       };
 
       const showFaces = () => {
-        gsap.set([...faces, glow, ...labels, ...pics], {
-          autoAlpha: 1,
-          x: 0,
-          y: 0,
-        });
+        gsap.set([...faces, glow], { autoAlpha: 1, x: 0, y: 0 });
+      };
+
+      const showDetails = () => {
+        gsap.set(labels, { autoAlpha: 1, x: 0, y: 0 });
+        gsap.set(pics, { autoAlpha: 1, x: 0, y: 0 });
+      };
+
+      const hideDetails = () => {
+        const lx = -labelFromX * artScale();
+        const py = picFromY * artScale();
+        gsap.set(labels, { autoAlpha: 0, x: lx, y: 0 });
+        gsap.set(pics, { autoAlpha: 0, x: 0, y: py });
       };
 
       const mm = gsap.matchMedia();
@@ -176,27 +213,45 @@ export function FuncDesign() {
         clearCardPos();
         gsap.set(cards, { autoAlpha: 1, y: 0 });
         showFaces();
-        gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestY });
+        showDetails();
+        // 眼鏡の表示は StickyGlass の吸着が担う。ここは静止位置だけ揃える。
+        gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestY, scale: 1 });
       });
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         let wait: gsap.core.Tween | null = null;
         let play: gsap.core.Timeline | null = null;
+        let detail: gsap.core.Timeline | null = null;
+        /** 一度入場したら section 退出までタイトル／画像は消さない */
+        let detailsShown = false;
         let endRects: BoxRect[] = [];
+        const dockEl = root.querySelector<HTMLElement>("[data-func-dock]");
 
         const clearWait = () => {
           wait?.kill();
           wait = null;
         };
 
-        const killPlay = () => {
-          clearWait();
-          play?.kill();
-          play = null;
+        const killDetail = () => {
+          detail?.kill();
+          detail = null;
+        };
+
+        const keepDetails = () => {
+          if (detailsShown) showDetails();
+        };
+
+        const resetDetails = () => {
+          detailsShown = false;
+          killDetail();
+          hideDetails();
         };
 
         const resetCards = () => {
-          killPlay();
+          clearWait();
+          play?.kill();
+          play = null;
+          resetDetails();
           endRects = measureEnds();
           placeCards(startRects());
           gsap.set(cards, {
@@ -204,10 +259,8 @@ export function FuncDesign() {
             y: () => risePx * artScale(),
           });
           showFaces();
-          gsap.set(glass, {
-            y: glassFrom,
-            autoAlpha: 0,
-          });
+          // 眼鏡の autoAlpha / scale は StickyGlass が scrub で制御する。
+          gsap.set(glass, { y: glassRestY, x: 0 });
         };
 
         const buildPlay = () => {
@@ -226,20 +279,81 @@ export function FuncDesign() {
                 duration: morphSec,
                 ease: "power2.out",
               },
-              0,
+              i * morphStep,
             );
           });
-          tl.to(
-            glass,
-            {
-              y: glassRestY,
-              autoAlpha: 1,
-              duration: glassSec,
-              ease: "power2.out",
-            },
-            glassLag,
-          );
+          tl.eventCallback("onComplete", keepDetails);
           return tl;
+        };
+
+        const buildDetail = () => {
+          const lx = -labelFromX * artScale();
+          const py = picFromY * artScale();
+          gsap.set([labelC, labelL, labelR], { autoAlpha: 0, x: lx, y: 0 });
+          gsap.set([picR, picL], { autoAlpha: 0, x: 0, y: py });
+          // 吸着後: 中央ラベル → 右画像 → 左ラベル → 左画像 → 右ラベル
+          return gsap
+            .timeline()
+            .to(
+              labelC,
+              { autoAlpha: 1, x: 0, duration: labelDur, ease: "power2.out" },
+              0,
+            )
+            .to(
+              picR,
+              { autoAlpha: 1, y: 0, duration: picDur, ease: "power2.out" },
+              detailStep,
+            )
+            .to(
+              labelL,
+              { autoAlpha: 1, x: 0, duration: labelDur, ease: "power2.out" },
+              detailStep * 2,
+            )
+            .to(
+              picL,
+              { autoAlpha: 1, y: 0, duration: picDur, ease: "power2.out" },
+              detailStep * 3,
+            )
+            .to(
+              labelR,
+              { autoAlpha: 1, x: 0, duration: labelDur, ease: "power2.out" },
+              detailStep * 4,
+            );
+        };
+
+        const beginDetail = () => {
+          // 一度出したら最終表示のまま（上スクロールで消さない）
+          if (detailsShown) {
+            showDetails();
+            return;
+          }
+          if (detail) {
+            if (detail.reversed()) detail.reversed(false);
+            return;
+          }
+          hideDetails();
+          detail = buildDetail();
+          detail.eventCallback("onComplete", () => {
+            detailsShown = true;
+            showDetails();
+          });
+        };
+
+        const remountCards = () => {
+          clearWait();
+          play?.kill();
+          play = null;
+          // detailsShown 中はタイトル／画像を触らない（box だけ組み直す）
+          endRects = measureEnds();
+          placeCards(startRects());
+          gsap.set(cards, {
+            autoAlpha: 0,
+            y: () => risePx * artScale(),
+          });
+          showFaces();
+          if (detailsShown) showDetails();
+          else hideDetails();
+          gsap.set(glass, { y: glassRestY, x: 0 });
         };
 
         const begin = () => {
@@ -249,30 +363,51 @@ export function FuncDesign() {
             if (play.progress() === 0 && play.reversed()) {
               wait = gsap.delayedCall(enterLag, () => {
                 play?.restart();
+                keepDetails();
               });
               return;
             }
             play.reversed(false);
+            keepDetails();
             return;
           }
 
-          resetCards();
+          remountCards();
           wait = gsap.delayedCall(enterLag, () => {
             play = buildPlay();
           });
         };
 
         const leaveBack = () => {
+          // 吸着〜弾き出し付近では逆再生しない（上スクロールで box が消えるのを防ぐ）。
+          if (dockEl) {
+            const box = dockEl.getBoundingClientRect();
+            const mid = box.top + box.height / 2;
+            const vh = window.innerHeight;
+            if (mid > vh * dockKeepTop && mid < vh * dockKeepBot) return;
+          }
           clearWait();
-          // 入場タイムラインを逆再生。kill＋作り直しだと瞬間表示になりやすい。
+          // タイトル／画像は維持。box morph だけ逆再生。
           if (play) {
             play.reversed(true);
             return;
           }
-          resetCards();
+          if (detailsShown) remountCards();
+          else resetCards();
+        };
+
+        // Sticky 吸着完了でラベル／画像を順に入場（購読は cleanup 必須）。
+        const onDock = (ev: Event) => {
+          const docked = Boolean(
+            (ev as CustomEvent<{ docked?: boolean }>).detail?.docked,
+          );
+          if (docked) beginDetail();
         };
 
         resetCards();
+        root.addEventListener(funcDockEvent, onDock);
+        if (root.hasAttribute("data-func-docked")) beginDetail();
+
         // 順方向: 従来どおり。逆方向の leaveBack は別 ST で早めに発火。
         ScrollTrigger.create({
           trigger: root,
@@ -289,9 +424,22 @@ export function FuncDesign() {
           start: leaveBackStart,
           onLeaveBack: leaveBack,
         });
+        // イベント取りこぼし用。吸着帯に入ったら入場（済みなら show のみ）。
+        if (dockEl) {
+          ScrollTrigger.create({
+            trigger: dockEl,
+            start: "center 72%",
+            onEnter: beginDetail,
+            onEnterBack: beginDetail,
+          });
+        }
 
         return () => {
-          killPlay();
+          root.removeEventListener(funcDockEvent, onDock);
+          clearWait();
+          play?.kill();
+          play = null;
+          resetDetails();
         };
       });
     },
@@ -330,6 +478,7 @@ export function FuncDesign() {
             <li
               key={card.title}
               data-card
+              {...(card.glass ? { "data-func-dock": "" } : {})}
               className="relative h-[25cqw] min-w-0 basis-0 overflow-hidden rounded-[25px]"
               style={{ flexGrow: card.endGrow }}
             >
@@ -354,6 +503,7 @@ export function FuncDesign() {
                 <div className="absolute inset-0 z-10 flex items-center justify-center">
                   <div
                     data-glass
+                    data-func-glass
                     aria-hidden
                     className="w-155 shrink-0 motion-safe:opacity-0"
                   >
