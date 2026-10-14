@@ -5,7 +5,10 @@ export function Hero({ glass }: { glass: ReactNode }) {
   return (
     <section className="hero-light relative flex h-[min(100svh,800px)] w-full items-center justify-center px-4">
       <div className="flex w-full max-w-[620px] flex-col items-center text-center text-white">
-        <h1 className="font-brand text-[28px] leading-none whitespace-nowrap md:text-[56px] lg:text-[96px]">
+        <h1
+          data-hero-title
+          className="font-brand text-[28px] leading-none whitespace-nowrap md:text-[56px] lg:text-[96px]"
+        >
           <span className="sr-only">GLASSROOM</span>
           <span aria-hidden="true">
             <DrawWord />

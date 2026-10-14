@@ -23,18 +23,20 @@ export const modelHandoffEvent = "glassroom:model-handoff";
 /** FuncDesign 吸着完了／解除（detail.docked） */
 export const funcDockEvent = "glassroom:func-dock";
 
-/** FuncDesign 中央 box: 入り込み完了〜吸着の進捗帯 */
-const dockEnterEnd = 0.28;
+/** FuncDesign 中央 box: スライド完了後の吸着 */
 const dockHoldEnd = 0.72;
-const dockLatch = 0.24;
-const dockRelease = 0.76;
+/** 抜け際のうち、box 内を下へ出す割合。残りで Sticky が戻る */
+const exitDrop = 0.5;
 /** イベント解除（入り込み途中まで戻ったら） */
 const dockEventRelease = 0.12;
 /** box 内眼鏡の静止 y（FuncDesign と揃える） */
 const dockRestY = 50;
-const dockEnterScale = 1.22;
-const dockEjectScale = 1.18;
-const dockEjectY = -72;
+/** 透明になった位置から定位置までの進捗幅 */
+const slideSpan = 0.2;
+/** 眼鏡中心が box 上端からこの割合で透明。中央は 0.5 */
+const fadeRel = 0.4;
+/** 吸着維持の直前でスライドを終える */
+const slideHoldGap = 0.04;
 /** 中央吸着の短い pin（Titan と同型） */
 const dockDwell = "+=40%";
 
@@ -80,6 +82,34 @@ export function StickyGlass() {
           });
         }
 
+        // 眼鏡中心が box 高さの fadeRel に来る進捗（中央より少し上）。
+        const fadeEndP = () => {
+          const vh = window.innerHeight || 1;
+          const boxH = funcDock?.offsetHeight ?? 0;
+          const raw = (0.3 + (fadeRel - 0.5) * (boxH / vh)) / 0.6;
+          const maxP = dockHoldEnd - slideHoldGap - slideSpan;
+          return gsap.utils.clamp(0.05, Math.max(0.05, maxP), raw);
+        };
+
+        const slideEndP = () =>
+          Math.min(fadeEndP() + slideSpan, dockHoldEnd - slideHoldGap);
+
+        const fitScale = () => {
+          if (!funcDock) return 1;
+          const boxW = funcDock.offsetWidth || 1;
+          const boxH = funcDock.offsetHeight || 1;
+          const glassW = fade.offsetWidth || 1;
+          const glassH = fade.offsetHeight || 1;
+          return Math.min(1, boxW / glassW, boxH / glassH);
+        };
+
+        const slideFromY = () => {
+          if (!funcDock || !funcGlass) return dockRestY;
+          const boxH = funcDock.offsetHeight;
+          const glassH = funcGlass.offsetHeight;
+          return boxH / 2 + glassH / 2;
+        };
+
         // pin は Model 枠付近まで。受け渡し後もしばらく維持してから外す。
         const endTrigger = normal ?? model ?? stack;
         const pin = ScrollTrigger.create({
@@ -93,7 +123,7 @@ export function StickyGlass() {
         });
 
         let blurTl: gsap.core.Timeline | null = null;
-        // Feature 通過中にぼかし、FuncDesign 吸着の前に戻す（Model だけのときは従来）。
+        // Feature 通過中にぼかす。FuncDesign では覆いまで placeDock が維持する。
         if (feature && (funcDock || model)) {
           gsap.set(fade, { filter: "blur(0px)" });
           blurTl = gsap
@@ -111,8 +141,10 @@ export function StickyGlass() {
               { filter: "blur(0px)" },
               { filter: coverBlur, duration: 1, ease: "none" },
             )
-            .to({}, { duration: funcDock ? 3 : 6 })
-            .to(fade, { filter: "blur(0px)", duration: 1, ease: "none" });
+            .to({}, { duration: 6 });
+          if (!funcDock) {
+            blurTl.to(fade, { filter: "blur(0px)", duration: 1, ease: "none" });
+          }
         } else if (feature && funcDesign) {
           gsap.set(fade, { filter: "blur(0px)" });
           blurTl = gsap
@@ -151,9 +183,9 @@ export function StickyGlass() {
           if (normalImg) gsap.set(normalImg, { autoAlpha: 1 });
         };
 
-        const syncDockEvent = (p: number) => {
+        const syncDockEvent = (p: number, latch: number) => {
           if (!funcDesign) return;
-          if (!dockFired && p >= dockLatch) {
+          if (!dockFired && p >= latch) {
             dockFired = true;
             funcDesign.setAttribute("data-func-docked", "");
             funcDesign.dispatchEvent(
@@ -220,12 +252,24 @@ export function StickyGlass() {
         const placeDock = (p: number) => {
           if (!funcGlass || handed) return;
 
+          const fromY = slideFromY();
+          const fadeEnd = fadeEndP();
+          const slideEnd = slideEndP();
+          const span = Math.max(slideEnd - fadeEnd, 0.001);
+          const fit = fitScale();
+          // 透明になるまでぼかす。上スクロールで p<=0 に戻ったら blurTl に返す。
+          if (p > 0) {
+            gsap.set(fade, {
+              filter: p < fadeEnd ? coverBlur : "blur(0px)",
+            });
+          }
+
           if (p <= 0) {
             docked = false;
-            syncDockEvent(0);
+            syncDockEvent(0, slideEnd);
             gsap.set(funcGlass, {
-              y: dockRestY,
-              scale: dockEnterScale,
+              y: fromY,
+              scale: 1,
               autoAlpha: 0,
             });
             if (!handed) {
@@ -234,29 +278,48 @@ export function StickyGlass() {
             return;
           }
 
-          if (p < dockEnterEnd) {
-            const t = p / dockEnterEnd;
-            const ease = gsap.parseEase("power2.out")(t);
-            docked = p >= dockLatch;
-            syncDockEvent(p);
+          if (p < fadeEnd) {
+            const t = p / Math.max(fadeEnd, 0.001);
+            docked = true;
+            syncDockEvent(p, slideEnd);
             gsap.set(funcGlass, {
-              y: gsap.utils.interpolate(0, dockRestY, ease),
-              scale: gsap.utils.interpolate(dockEnterScale, 1, ease),
-              autoAlpha: ease,
+              y: fromY,
+              scale: 1,
+              autoAlpha: 0,
             });
-            // filter は blurTl 専任（ここだと上スクロール時にぼかしを潰す）
+            if (!handed) {
+              gsap.set(fade, {
+                autoAlpha: 1 - t,
+                x: 0,
+                y: 0,
+                scale: gsap.utils.interpolate(1, fit, t),
+              });
+            }
+            return;
+          }
+
+          if (p < slideEnd) {
+            const t = (p - fadeEnd) / span;
+            const ease = gsap.parseEase("power2.out")(t);
+            docked = true;
+            syncDockEvent(p, slideEnd);
+            gsap.set(funcGlass, {
+              y: gsap.utils.interpolate(fromY, dockRestY, ease),
+              scale: 1,
+              autoAlpha: 1,
+            });
             gsap.set(fade, {
-              autoAlpha: 1 - ease,
+              autoAlpha: 0,
               x: 0,
               y: 0,
-              scale: 1,
+              scale: fit,
             });
             return;
           }
 
           if (p < dockHoldEnd) {
             docked = true;
-            syncDockEvent(p);
+            syncDockEvent(p, slideEnd);
             gsap.set(funcGlass, {
               y: dockRestY,
               scale: 1,
@@ -266,27 +329,45 @@ export function StickyGlass() {
               autoAlpha: 0,
               x: 0,
               y: 0,
-              scale: 1,
+              scale: fit,
             });
             return;
           }
 
-          const t = (p - dockHoldEnd) / (1 - dockHoldEnd);
-          const ease = gsap.parseEase("power2.in")(t);
-          docked = p < dockRelease;
-          // 弾き出し中も detail 入場は維持（解除は上スクロールで入り込み前に戻ったとき）
-          syncDockEvent(p);
+          const dropEnd = dockHoldEnd + (1 - dockHoldEnd) * exitDrop;
+          syncDockEvent(p, slideEnd);
+          if (p < dropEnd) {
+            const t = (p - dockHoldEnd) / Math.max(dropEnd - dockHoldEnd, 0.001);
+            const ease = gsap.parseEase("power2.in")(t);
+            docked = true;
+            gsap.set(funcGlass, {
+              y: gsap.utils.interpolate(dockRestY, fromY, ease),
+              scale: 1,
+              autoAlpha: 1,
+            });
+            gsap.set(fade, {
+              autoAlpha: 0,
+              x: 0,
+              y: 0,
+              scale: fit,
+            });
+            return;
+          }
+
+          const t = (p - dropEnd) / Math.max(1 - dropEnd, 0.001);
+          const ease = gsap.parseEase("power2.out")(Math.min(t, 1));
+          docked = ease < 1;
           gsap.set(funcGlass, {
-            y: gsap.utils.interpolate(dockRestY, dockEjectY, ease),
-            scale: gsap.utils.interpolate(1, dockEjectScale, ease),
-            autoAlpha: 1 - ease,
+            y: fromY,
+            scale: 1,
+            autoAlpha: 0,
           });
           if (!handed) {
             gsap.set(fade, {
               autoAlpha: ease,
               x: 0,
               y: 0,
-              scale: 1,
+              scale: gsap.utils.interpolate(fit, 1, ease),
             });
           }
         };

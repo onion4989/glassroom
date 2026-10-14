@@ -7,12 +7,14 @@ import { FuncDesign } from "@/features/home/components/FuncDesign";
 import { Hero } from "@/features/home/components/Hero";
 import { Model } from "@/features/home/components/Model";
 import { Sales } from "@/features/home/components/Sales";
+import { SideBrand } from "@/features/home/components/SideBrand";
 import { StickyGlass } from "@/features/home/components/StickyGlass";
 import { Titan } from "@/features/home/components/Titan";
 
 export default function Home() {
   return (
     <main className="flex min-h-svh flex-1 flex-col">
+      <SideBrand />
       <SmoothScroll>
         <div data-page-stack className="relative">
           <Hero glass={<StickyGlass />} />
