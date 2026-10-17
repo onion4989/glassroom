@@ -60,12 +60,12 @@ export function Feature() {
 
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
         gsap.set(cards, { y: 0, autoAlpha: 1 });
         gsap.set(layers, { y: 0 });
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         cards.forEach((card) => {
           gsap.fromTo(
             card,
@@ -117,43 +117,47 @@ export function Feature() {
         aria-hidden
         className="pointer-events-none absolute inset-0 z-10 bg-[#070707]"
       />
-      <div className="@container relative z-60 mx-auto w-full max-w-360 pt-[4.306cqw]">
+      <div className="@container relative z-60 mx-auto flex w-full max-w-360 flex-col items-center gap-[15px] px-5 py-10 md:block md:gap-0 md:px-0 md:py-0 md:pt-[4.306cqw]">
         <h2
           id="feature-title"
           className="flex cursor-default items-baseline justify-center font-jp text-white select-none"
         >
-          <span className="text-[4.444cqw] leading-[1.2]">FREE FiT</span>
-          <span className="ml-[0.833cqw] text-[3.333cqw] leading-[1.2]">の</span>
-          <span className="ml-[0.972cqw] text-[4.444cqw] leading-[1.2]">
+          <span className="text-[32px] leading-none md:text-[4.444cqw] md:leading-[1.2]">
+            FREE FiT
+          </span>
+          <span className="ml-[5px] text-[24px] leading-none md:ml-[0.833cqw] md:text-[3.333cqw] md:leading-[1.2]">
+            の
+          </span>
+          <span className="ml-[5px] text-[32px] leading-none md:ml-[0.972cqw] md:text-[4.444cqw] md:leading-[1.2]">
             特徴
           </span>
         </h2>
-        <p className="mt-[1.319cqw] cursor-default text-center font-jp text-[1.667cqw] leading-[1.2] text-white select-none">
+        <p className="cursor-default text-center font-jp text-[16px] leading-none text-white select-none md:mt-[1.319cqw] md:text-[1.667cqw] md:leading-[1.2]">
           湿気の多い日でも曇りにくい撥水加工レンズ
         </p>
-        <ul className="mt-[3.542cqw] flex list-none gap-[1.667cqw] px-[8.333cqw] pb-[5.694cqw]">
+        <ul className="grid w-full list-none grid-cols-2 gap-x-[10px] gap-y-3 md:mt-[3.542cqw] md:flex md:gap-[1.667cqw] md:px-[8.333cqw] md:pb-[5.694cqw]">
           {featCards.map((card) => (
             <li
               key={card.title}
-              className="relative h-[33.333cqw] min-w-0 basis-0 grow"
+              className="relative h-[160px] min-w-0 md:h-[33.333cqw] md:basis-0 md:grow"
             >
               <div
                 data-card
-                className="size-full motion-safe:opacity-0"
+                className="size-full md:motion-safe:opacity-0"
               >
                 <div
                   data-parallax
-                  className="relative size-full overflow-hidden rounded-[1.736cqw]"
+                  className="relative size-full overflow-hidden rounded-[15px] md:rounded-[1.736cqw]"
                 >
                   <Image
                     src={card.src}
                     alt={card.alt}
                     width={423}
                     height={720}
-                    sizes="(max-width: 1440px) 20vw, 282px"
+                    sizes="(max-width: 767px) 45vw, (max-width: 1440px) 20vw, 282px"
                     className="size-full object-cover"
                   />
-                  <p className="absolute top-[0.833cqw] left-[0.972cqw] z-10 flex h-[3.333cqw] w-[13.403cqw] cursor-default items-center justify-center rounded-[1.042cqw] bg-black/20 font-jp text-[1.389cqw] leading-[1.75] tracking-[0.139cqw] text-white select-none">
+                  <p className="absolute top-2 right-2 left-2 z-10 flex h-[31px] cursor-default items-center rounded-[5px] bg-black/20 px-3 font-jp text-[14px] leading-none tracking-[0.1em] text-white select-none md:top-[0.833cqw] md:right-auto md:left-[0.972cqw] md:h-[3.333cqw] md:w-[13.403cqw] md:justify-center md:rounded-[1.042cqw] md:px-0 md:text-[1.389cqw] md:leading-[1.75] md:tracking-[0.139cqw]">
                     {card.title}
                   </p>
                 </div>

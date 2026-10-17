@@ -40,6 +40,21 @@ const slideHoldGap = 0.04;
 /** 中央吸着の短い pin（Titan と同型） */
 const dockDwell = "+=40%";
 
+/** モバイル眼鏡が留まるビューポート上の位置。pin 前は自然位置 */
+export const spGlassLine = (edge: "top" | "center") => {
+  const fade = document.querySelector<HTMLElement>("[data-sticky-fade]");
+  const root = fade?.parentElement ?? null;
+  if (!fade || !root) return 0;
+  const host =
+    root.parentElement?.classList.contains("pin-spacer")
+      ? root.parentElement
+      : root;
+  const scroll = window.scrollY || document.documentElement.scrollTop || 0;
+  const top = host.getBoundingClientRect().top + scroll;
+  if (edge === "top") return top;
+  return top + fade.offsetHeight / 2;
+};
+
 export function StickyGlass() {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +77,7 @@ export function StickyGlass() {
       const funcGlass = stack.querySelector<HTMLElement>("[data-func-glass]");
 
       const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         if (!fade) return;
 
         gsap.set(fade, {
@@ -453,7 +468,7 @@ export function StickyGlass() {
         };
       });
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
         if (!fade) return;
         gsap.set(fade, {
           filter: "none",
@@ -471,6 +486,110 @@ export function StickyGlass() {
           });
         }
       });
+
+      // モバイル: Titan 退場で Sticky を消す。FuncDesign は箱の中だけ。
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+        if (!fade) return;
+
+        const spDock = stack.querySelector<HTMLElement>("[data-sp-func-dock]");
+        const spGlass = stack.querySelector<HTMLElement>("[data-sp-func-glass]");
+        const titan = stack.querySelector<HTMLElement>("[data-titan]");
+
+        gsap.set(fade, {
+          transformOrigin: "center center",
+          x: 0,
+          y: 0,
+          scale: 1,
+          autoAlpha: 1,
+          filter: "blur(0px)",
+        });
+        gsap.set(el, { zIndex: 20 });
+        if (spGlass) {
+          gsap.set(spGlass, {
+            transformOrigin: "center center",
+            y: 0,
+            scale: 1,
+            autoAlpha: 0,
+          });
+        }
+
+        let boxIn: gsap.core.Tween | null = null;
+        if (spDock && spGlass) {
+          const fromY = spDock.offsetHeight / 2 + spGlass.offsetHeight / 2;
+          gsap.set(spGlass, { y: fromY, autoAlpha: 0 });
+          boxIn = gsap.to(spGlass, {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.6,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: spDock,
+              start: "center center",
+              once: true,
+            },
+          });
+        }
+
+        const pin = ScrollTrigger.create({
+          trigger: el,
+          start: () => `top ${Math.round(spGlassLine("top"))}px`,
+          endTrigger: titan ?? el,
+          // Titan の pin 余白 120px 分、見た目の下端より先に進む
+          end: titan ? "bottom top-=420" : "bottom bottom",
+          pin: true,
+          pinSpacing: false,
+          anticipatePin: 0,
+        });
+
+        let exitTl: gsap.core.Timeline | null = null;
+        if (titan) {
+          exitTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: titan,
+              start: "bottom top-=120",
+              end: "bottom top-=420",
+              scrub: true,
+              onLeave: () => {
+                gsap.set(el, { display: "none" });
+              },
+              onEnterBack: () => {
+                gsap.set(el, { display: "block" });
+              },
+            },
+          });
+          exitTl.fromTo(
+            fade,
+            { filter: "blur(0px)", autoAlpha: 1 },
+            { filter: coverBlur, autoAlpha: 0, ease: "none" },
+          );
+        }
+
+        return () => {
+          exitTl?.scrollTrigger?.kill();
+          exitTl?.kill();
+          boxIn?.scrollTrigger?.kill();
+          boxIn?.kill();
+          pin.kill();
+          gsap.set(el, { clearProps: "zIndex,display" });
+          gsap.set(fade, { clearProps: "transform,filter,opacity,visibility" });
+          if (spGlass) {
+            gsap.set(spGlass, { clearProps: "transform,opacity,visibility" });
+          }
+        };
+      });
+
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: reduce)", () => {
+        if (!fade) return;
+        const spGlass = stack.querySelector<HTMLElement>("[data-sp-func-glass]");
+        gsap.set(fade, {
+          filter: "none",
+          x: 0,
+          y: 0,
+          scale: 1,
+          autoAlpha: 1,
+        });
+        if (spGlass) gsap.set(spGlass, { autoAlpha: 0 });
+      });
     },
     { scope: rootRef },
   );
@@ -478,7 +597,7 @@ export function StickyGlass() {
   return (
     <div
       ref={rootRef}
-      className="pointer-events-none relative z-30 mt-[30px] w-full max-w-[620px]"
+      className="pointer-events-none relative z-30 mt-0 w-[236px] md:mt-[30px] md:w-full md:max-w-[620px]"
     >
       {/* pin 本体と分離し、フェード／移動が pin の transform と干渉しないようにする */}
       <div data-sticky-fade className="w-full will-change-transform">

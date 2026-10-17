@@ -72,7 +72,7 @@ export function Sales() {
         });
       };
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
         writeCount(countEnd);
         gsap.set([label, suffix, asOf, btnText, arrow, tip], {
           autoAlpha: 1,
@@ -82,7 +82,7 @@ export function Sales() {
         showStroke();
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         let wait: gsap.core.Tween | null = null;
         let play: gsap.core.Timeline | null = null;
 
@@ -213,10 +213,44 @@ export function Sales() {
     <section
       ref={rootRef}
       data-sales
-      aria-labelledby="sales-title"
+      aria-label="累計販売本数"
       className="relative z-10 w-full overflow-hidden bg-[#070707]"
     >
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
+      <div className="relative z-10 flex flex-col items-center gap-[15px] px-5 py-10 md:hidden">
+        <h2 className="font-jp text-[32px] leading-none tracking-[0.2em] text-white">
+          累計販売本数
+        </h2>
+        <div className="flex items-end text-white">
+          <p className="font-brand text-[64px] leading-none tracking-[0.1em]">
+            15,000
+          </p>
+          <span className="mb-3 ml-1 font-jp text-[16px] leading-none tracking-[0.2em]">
+            以上
+          </span>
+        </div>
+        <p className="font-jp text-[16px] leading-none tracking-[0.2em] text-white">
+          ※2026年9月現在
+        </p>
+        <a
+          href="#"
+          className="relative flex h-[70px] w-full max-w-[350px] items-center justify-center rounded-full border border-white"
+        >
+          <span className="font-jp text-[16px] leading-none tracking-[0.2em] text-white">
+            お問い合わせはこちらから
+          </span>
+          <img
+            src={arrowSrc}
+            alt=""
+            width={8}
+            height={13}
+            className="absolute right-5 h-[13px] w-2"
+          />
+        </a>
+        <p className="text-center font-jp text-[10px] leading-none tracking-[0.2em] text-white">
+          在庫のご確認・ご予約、などお気軽にご相談ください。
+        </p>
+      </div>
+      <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden>
         <div
           className="absolute inset-0 opacity-30"
           style={{
@@ -240,11 +274,11 @@ export function Sales() {
           }}
         />
       </div>
-      <div className="@container relative z-10 mx-auto flex w-full max-w-360 flex-col items-center px-[8.333cqw] py-[10.417cqw]">
+      <div className="@container relative z-10 mx-auto hidden w-full max-w-360 flex-col items-center px-[8.333cqw] py-[10.417cqw] md:flex">
         <h2
           id="sales-title"
           data-part="label"
-          className="cursor-default font-jp text-[3.333cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
+          className="cursor-default font-jp text-[3.333cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
         >
           累計販売本数
         </h2>
@@ -258,7 +292,7 @@ export function Sales() {
           </p>
           <span
             data-part="suffix"
-            className="mt-[3.264cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
+            className="mt-[3.264cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
           >
             以上
           </span>
@@ -266,7 +300,7 @@ export function Sales() {
 
         <p
           data-part="asof"
-          className="mt-[2.153cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
+          className="mt-[2.153cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
         >
           ※2026年9月現在
         </p>
@@ -298,14 +332,14 @@ export function Sales() {
           </svg>
           <span
             data-part="btn-text"
-            className="cursor-pointer font-jp text-[1.667cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
+            className="cursor-pointer font-jp text-[1.667cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
           >
             お問い合わせはこちらから
           </span>
           <span
             data-part="arrow"
             aria-hidden
-            className="absolute right-[1.944cqw] flex h-[1.25cqw] w-[0.764cqw] items-center justify-center motion-safe:opacity-0"
+            className="absolute right-[1.944cqw] flex h-[1.25cqw] w-[0.764cqw] items-center justify-center md:motion-safe:opacity-0"
           >
             {/* next/image は既定で SVG 不可のため img */}
             <img
@@ -320,7 +354,7 @@ export function Sales() {
 
         <p
           data-part="tip"
-          className="mt-[1.111cqw] cursor-default text-center font-jp text-[1.111cqw] leading-none tracking-[0.2em] text-white select-none motion-safe:opacity-0"
+          className="mt-[1.111cqw] cursor-default text-center font-jp text-[1.111cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
         >
           在庫のご確認・ご予約、などお気軽にご相談ください。
         </p>

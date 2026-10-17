@@ -60,12 +60,14 @@ body {
   background-color: #070707;
 }
 
-.rise-line {
-  animation: rise-line 2.5s cubic-bezier(0.22, 1, 0.36, 1) 2.96s both;
-}
+@media (min-width: 768px) {
+  .rise-line {
+    animation: rise-line 2.5s cubic-bezier(0.22, 1, 0.36, 1) 2.96s both;
+  }
 
-.rise-late {
-  animation-delay: 3.76s;
+  .rise-late {
+    animation-delay: 3.76s;
+  }
 }
 
 @keyframes rise-line {

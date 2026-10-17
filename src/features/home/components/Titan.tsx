@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { spGlassLine } from "@/features/home/components/StickyGlass";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 
 const letterY = 50;
@@ -232,6 +233,25 @@ export function Titan() {
   useGSAP(
     () => {
       const root = rootRef.current;
+      if (!root) return;
+
+      const spMm = gsap.matchMedia();
+      spMm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+        const dock = root.querySelector<HTMLElement>("[data-sp-titan]");
+        if (!dock) return;
+        const spPin = ScrollTrigger.create({
+          trigger: dock,
+          start: () => `center ${Math.round(spGlassLine("center"))}px`,
+          end: "+=120",
+          pin: root,
+          pinSpacing: true,
+          anticipatePin: 1,
+        });
+        return () => {
+          spPin.kill();
+        };
+      });
+
       const video = videoRef.current;
       const canvas = canvasRef.current;
       if (!root || !video || !canvas) return;
@@ -281,9 +301,35 @@ export function Titan() {
       const ro = new ResizeObserver(onResize);
       ro.observe(root);
 
+      spMm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+        const play = () => {
+          video.playbackRate = smokeRate;
+          const pending = video.play();
+          startPaint();
+          if (pending) pending.catch(() => undefined);
+        };
+        const parkVid = () => {
+          stopPaint();
+          video.pause();
+        };
+        const vidSt = ScrollTrigger.create({
+          trigger: root,
+          start: "top 80%",
+          end: "bottom top",
+          onEnter: play,
+          onEnterBack: play,
+          onLeave: parkVid,
+          onLeaveBack: parkVid,
+        });
+        return () => {
+          vidSt.kill();
+          parkVid();
+        };
+      });
+
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
         video.pause();
         const showStill = () => paintScreen(canvas, video, kit);
         if (video.readyState >= 2) showStill();
@@ -293,7 +339,7 @@ export function Titan() {
         };
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         const held: gsap.core.Animation[] = [];
         const prep = (list: HTMLElement[]) =>
           list.flatMap((el) => {
@@ -461,9 +507,38 @@ export function Titan() {
     <section
       ref={rootRef}
       data-titan
-      aria-labelledby="titan-title"
+      aria-label="形状記憶チタンフレーム"
       className="relative z-10 w-full bg-[#070707]"
     >
+      <div className="relative z-10 h-[300px] overflow-hidden px-5 pt-10 font-jp text-white md:hidden">
+        <h2 className="text-[24px] leading-none">形状記憶チタンフレーム</h2>
+        <div className="relative mt-[10px] ml-[30px] h-[58px] w-[297px] max-w-full">
+          {/* 下端 + 30px が眼鏡上端。33px は幅 236px の眼鏡の半高 */}
+          <div
+            data-sp-titan
+            aria-hidden
+            className="pointer-events-none absolute top-[calc(100%+63px)] left-1/2 size-px -translate-x-1/2"
+          />
+          <p className="absolute top-[15px] left-0 text-[24px] leading-none">
+            圧倒的
+          </p>
+          <p className="absolute top-[17px] left-[77px] text-[20px] leading-none">
+            な
+          </p>
+          <p className="absolute top-[15px] left-[100px] text-[24px] leading-none">
+            軽さ
+          </p>
+          <p className="absolute top-[15px] left-[153px] text-[24px] leading-none">
+            わずか
+          </p>
+          <p className="absolute top-0 left-[228px] font-brand text-[48px] leading-none">
+            2
+          </p>
+          <p className="absolute top-[15px] left-[261px] font-brand text-[24px] leading-none">
+            mg
+          </p>
+        </div>
+      </div>
       <div
         className="pointer-events-none absolute inset-0 overflow-hidden"
         aria-hidden
@@ -481,14 +556,26 @@ export function Titan() {
         {showEdgeFade ? (
           <>
             <div
-              className="absolute inset-x-0 top-0 z-[1]"
+              className="absolute inset-x-0 top-0 z-[1] h-10 md:hidden"
+              style={{
+                background: `linear-gradient(to bottom, ${backTone}, transparent)`,
+              }}
+            />
+            <div
+              className="absolute inset-x-0 bottom-0 z-[1] h-10 md:hidden"
+              style={{
+                background: `linear-gradient(to top, ${backTone}, transparent)`,
+              }}
+            />
+            <div
+              className="absolute inset-x-0 top-0 z-[1] hidden md:block"
               style={{
                 height: edgeFade,
                 background: `linear-gradient(to bottom, ${backTone}, transparent)`,
               }}
             />
             <div
-              className="absolute inset-x-0 bottom-0 z-[1]"
+              className="absolute inset-x-0 bottom-0 z-[1] hidden md:block"
               style={{
                 height: edgeFade,
                 background: `linear-gradient(to top, ${backTone}, transparent)`,
@@ -497,7 +584,7 @@ export function Titan() {
           </>
         ) : null}
       </div>
-      <div className="@container relative z-10 mx-auto h-[55.556cqw] w-full max-w-360">
+      <div className="@container relative z-10 mx-auto hidden h-[55.556cqw] w-full max-w-360 md:block">
         <div
           data-titan-dock
           aria-hidden

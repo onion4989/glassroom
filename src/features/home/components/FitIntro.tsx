@@ -6,6 +6,32 @@ import { gsap, useGSAP } from "@/lib/gsap";
 const fitCopy =
   "軽い、ズレにくい、驚きのかけ心地”がテーマのFREE FiT（フリーフィット）。男女問わずかけられる大きめサイズのオーバルタイプです。やわらかな形の玉型が自然に顔に馴染み、リム上部のカットで立体感と上質な印象を演出します。また、エッジの効いたテンプルがほどよく個性を表現し、横顔をすっきりと引き締めます。";
 
+const fitCopySp =
+  "軽い、ズレにくい、驚きのかけ心地”がテーマのFREE FiT（フリーフィット）。サイズ・フレーム・カラーともに眼鏡市場No.1のラインアップを誇り、多くのお客様に支持されるブランドから、シートメタルフロントタイプが登場しました。FFT-097は、男女問わずかけられる大きめサイズのオーバルタイプです。やわらかな形の玉型が自然に顔に馴染み、リム上部のカットで立体感と上質な印象を演出します。また、エッジの効いたテンプルがほどよく個性を表現し、横顔をすっきりと引き締めます。";
+
+type IntroOrb = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  tone: "light" | "mid";
+};
+
+const introOrbs: IntroOrb[] = [
+  { x: 0, y: 23, w: 51, h: 81, tone: "light" },
+  { x: 25, y: 49, w: 51, h: 81, tone: "mid" },
+  { x: 30, y: 115, w: 82, h: 50, tone: "light" },
+  { x: 56, y: 91, w: 82, h: 50, tone: "mid" },
+];
+
+/** 右側の塊。左へ 90 度回して右上に置く（元座標から 202 を引く） */
+const introOrbsR: IntroOrb[] = [
+  { x: 0, y: 0, w: 43, h: 70, tone: "light" },
+  { x: 22, y: 22, w: 43, h: 70, tone: "mid" },
+  { x: 55, y: 65, w: 70, h: 43, tone: "light" },
+  { x: 78, y: 44, w: 70, h: 43, tone: "mid" },
+];
+
 const fitTitle = "FREE FiT";
 const artBase = 1440;
 const boxTravel = 50;
@@ -15,6 +41,8 @@ const typeLag = 0.8;
 /** ガラス塊 A 弱め / B 強め（px @1440） */
 const glassShiftA = 50;
 const glassShiftB = 180;
+/** モバイルのテキスト箱。弱 50 と強 180 の中間 */
+const boxShiftSp = 110;
 
 type GlassPiece = {
   left: string;
@@ -100,7 +128,7 @@ export function FitIntro() {
       const glassB = root.querySelector<HTMLElement>("[data-glass-parallax='b']");
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
         title.textContent = fitTitle;
         if (caret) gsap.set(caret, { autoAlpha: 0 });
         gsap.set([boxMove, boxFade, glassA, glassB].filter(Boolean), {
@@ -108,7 +136,7 @@ export function FitIntro() {
         });
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         const blink = caret
           ? gsap.fromTo(
               caret,
@@ -203,6 +231,31 @@ export function FitIntro() {
           blink?.kill();
         };
       });
+
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+        const box = root.querySelector<HTMLElement>("[data-sp-box]");
+        if (!box) return;
+        const shift = gsap.fromTo(
+          box,
+          { y: -boxShiftSp / 2 },
+          {
+            y: boxShiftSp / 2,
+            ease: "none",
+            immediateRender: true,
+            scrollTrigger: {
+              trigger: root,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+        return () => {
+          shift.scrollTrigger?.kill();
+          shift.kill();
+        };
+      });
     },
     { scope: rootRef },
   );
@@ -211,9 +264,63 @@ export function FitIntro() {
     <section
       ref={rootRef}
       data-fit-intro
-      aria-labelledby="fit-intro-title"
+      aria-label={fitTitle}
       className="relative w-full overflow-hidden bg-[#070707]"
     >
+      <div className="relative flex flex-col gap-[15px] px-5 pt-[27px] pb-[45px] md:hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-2 right-2 z-10 h-[108px] w-[148px] origin-center -rotate-90"
+        >
+          {introOrbsR.map((orb) => (
+            <div
+              key={`r-${orb.x}-${orb.y}`}
+              className={`absolute rounded-[10px] opacity-50 ${
+                orb.tone === "light"
+                  ? "bg-[rgba(217,217,217,0.2)]"
+                  : "bg-[rgba(173,173,173,0.2)]"
+              }`}
+              style={{
+                left: orb.x,
+                top: orb.y,
+                width: orb.w,
+                height: orb.h,
+              }}
+            />
+          ))}
+        </div>
+        <h2 className="font-jp text-[32px] leading-none text-white">
+          {fitTitle}
+        </h2>
+        <div className="relative h-[165px] w-full">
+          {introOrbs.map((orb) => (
+            <div
+              key={`${orb.x}-${orb.y}`}
+              aria-hidden
+              className={`absolute rounded-[10px] opacity-50 ${
+                orb.tone === "light"
+                  ? "bg-[rgba(217,217,217,0.2)]"
+                  : "bg-[rgba(173,173,173,0.2)]"
+              }`}
+              style={{
+                left: orb.x,
+                top: orb.y,
+                width: orb.w,
+                height: orb.h,
+              }}
+            />
+          ))}
+        </div>
+        <div
+          data-sp-box
+          className="relative z-30 h-[300px] rounded-[15px] bg-black/40 px-[13px] pt-3"
+        >
+          <p className="font-jp text-[14px] leading-[25px] tracking-[0.1em] text-white">
+            {fitCopySp}
+          </p>
+        </div>
+      </div>
+      <div className="hidden md:block">
       <div className="@container relative mx-auto h-[55.556cqw] w-full max-w-360">
         <GlassCluster
           pieces={glassAPieces}
@@ -245,13 +352,14 @@ export function FitIntro() {
         >
           <div
             ref={boxFadeRef}
-            className="h-[20.556cqw] rounded-[1.042cqw] bg-black/40 px-[1.25cqw] pt-[1.389cqw] backdrop-blur-md motion-safe:opacity-0"
+            className="h-[20.556cqw] rounded-[1.042cqw] bg-black/40 px-[1.25cqw] pt-[1.389cqw] backdrop-blur-md md:motion-safe:opacity-0"
           >
             <p className="font-jp text-[1.389cqw] leading-[1.75] tracking-[0.1em] text-white">
               {fitCopy}
             </p>
           </div>
         </div>
+      </div>
       </div>
     </section>
   );

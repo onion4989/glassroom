@@ -16,28 +16,31 @@ export default function Home() {
     <main className="flex min-h-svh flex-1 flex-col">
       <SideBrand />
       <SmoothScroll>
-        <div data-page-stack className="relative">
+        <div
+          data-page-stack
+          className="relative flex flex-col gap-[6px] md:block"
+        >
           <Hero glass={<StickyGlass />} />
-          <div className="mt-[150px] flex flex-col">
-            <div className="mb-[150px]">
+          <div className="flex flex-col gap-[6px] md:mt-[150px] md:gap-0">
+            <div className="md:mb-[150px]">
               <FitIntro />
             </div>
-            <div className="mb-[150px]">
+            <div className="md:mb-[150px]">
               <Titan />
             </div>
-            <div className="mb-[150px]">
+            <div className="md:mb-[150px]">
               <Feature />
             </div>
-            <div className="mb-[150px]">
+            <div className="md:mb-[150px]">
               <FuncDesign />
             </div>
-            <div className="mb-[150px]">
+            <div className="md:mb-[150px]">
               <Model />
             </div>
-            <div className="mb-[150px]">
+            <div className="md:mb-[150px]">
               <Detail />
             </div>
-            <div className="mb-[150px]">
+            <div className="md:mb-[150px]">
               <Sales />
             </div>
             <Footer />

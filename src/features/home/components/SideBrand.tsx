@@ -55,10 +55,10 @@ export function SideBrand() {
       if (mark.progress > 0) gsap.set(word, { autoAlpha: fadeMax, y: 0 });
     };
 
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
+    mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
       arm(true);
     });
-    mm.add("(prefers-reduced-motion: reduce)", () => {
+    mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
       arm(false);
     });
 
@@ -71,7 +71,7 @@ export function SideBrand() {
     <p
       data-side-brand
       aria-hidden="true"
-      className="pointer-events-none fixed top-[60px] right-4 z-[70] font-brand text-[64px] leading-none tracking-[0.3em] whitespace-nowrap text-white opacity-0 [writing-mode:vertical-rl] min-[1440px]:text-[96px]"
+      className="pointer-events-none fixed top-[60px] right-4 z-[70] hidden font-brand text-[64px] leading-none tracking-[0.3em] whitespace-nowrap text-white opacity-0 [writing-mode:vertical-rl] md:block min-[1440px]:text-[96px]"
     >
       GLASS ROOM
     </p>

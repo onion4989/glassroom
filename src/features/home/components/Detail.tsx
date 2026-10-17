@@ -84,7 +84,7 @@ export function Detail() {
         };
       };
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
         const apply = () => {
           const end = fullBox();
           gsap.set(shot, {
@@ -101,7 +101,7 @@ export function Detail() {
         return () => window.removeEventListener("resize", apply);
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         let wait: gsap.core.Tween | null = null;
         let expand: gsap.core.Timeline | null = null;
         let decode: gsap.core.Tween | null = null;
@@ -198,7 +198,76 @@ export function Detail() {
       aria-label="製品詳細"
       className="relative z-10 w-full bg-[#070707]"
     >
-      <div ref={artRef} className="@container w-full">
+      <div className="py-10 md:hidden">
+        <div className="relative h-[220px] w-full">
+          <Image
+            src={detailSrc}
+            alt={detailAlt}
+            fill
+            sizes="100vw"
+            className="object-cover object-bottom"
+          />
+        </div>
+        <dl className="mx-auto mt-[30px] flex w-full max-w-[350px] flex-col px-5">
+          <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
+            <dt className="font-jp text-[16px] leading-none text-white">
+              ブランド
+            </dt>
+            <dd className="font-jp text-[16px] leading-none text-white">
+              FREE FiT
+            </dd>
+          </div>
+          <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
+            <dt className="font-jp text-[16px] leading-none text-white">
+              レンズの形
+            </dt>
+            <dd className="font-jp text-[16px] leading-none text-white">
+              オーバル
+            </dd>
+          </div>
+          <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
+            <dt className="font-jp text-[16px] leading-none text-white">
+              素材
+            </dt>
+            <dd className="font-jp text-[16px] leading-[1.6] text-white">
+              テンプル：剛性チタン
+              <br />
+              フロント：ステンレス
+            </dd>
+          </div>
+          <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
+            <dt className="font-jp text-[16px] leading-none text-white">
+              サイズ
+            </dt>
+            <dd className="font-jp text-[16px] leading-[1.6] text-white">
+              レンズ幅：53mm
+              <br />
+              テンプル：143mm
+              <br />
+              鼻幅：16mm
+              <br />
+              天地幅：34mm
+            </dd>
+          </div>
+          <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
+            <dt className="font-jp text-[16px] leading-none text-white">
+              重さ
+            </dt>
+            <dd className="font-jp text-[16px] leading-none text-white">
+              2mg
+            </dd>
+          </div>
+          <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 py-4">
+            <dt className="font-jp text-[16px] leading-none text-white">
+              原産国
+            </dt>
+            <dd className="font-jp text-[16px] leading-none text-white">
+              Made in Japan
+            </dd>
+          </div>
+        </dl>
+      </div>
+      <div ref={artRef} className="@container hidden w-full md:block">
         <div ref={stageRef} className="relative h-[55.556cqw] w-full">
           <div
             ref={shotRef}
@@ -213,7 +282,7 @@ export function Detail() {
             />
             <div
               ref={panelRef}
-              className="absolute inset-x-0 bottom-0 flex h-[32%] gap-[2.083cqw] px-[6.25cqw] bg-black/70 motion-safe:opacity-0"
+              className="absolute inset-x-0 bottom-0 flex h-[32%] gap-[2.083cqw] px-[6.25cqw] bg-black/70 md:motion-safe:opacity-0"
             >
               <SpecCol rows={leftSpecs} className="min-w-0 w-1/2" />
               <SpecCol rows={rightSpecs} className="min-w-0 w-1/2" />

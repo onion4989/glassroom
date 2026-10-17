@@ -209,7 +209,7 @@ export function FuncDesign() {
 
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
         clearCardPos();
         gsap.set(cards, { autoAlpha: 1, y: 0 });
         showFaces();
@@ -218,7 +218,7 @@ export function FuncDesign() {
         gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestY, scale: 1 });
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         let wait: gsap.core.Tween | null = null;
         let play: gsap.core.Timeline | null = null;
         let detail: gsap.core.Timeline | null = null;
@@ -450,15 +450,73 @@ export function FuncDesign() {
     <section
       ref={rootRef}
       data-func-design
-      aria-labelledby="func-design-title"
-      className="relative w-full pt-25"
+      aria-label="機能性 × デザイン"
+      className="relative w-full md:pt-25"
     >
       {/* sticky 眼鏡より下。コンテンツは z-60 で眼鏡の上 */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-10 bg-[#070707]"
       />
-      <div ref={artRef} className="@container relative z-60 mx-auto w-full max-w-360">
+      <div className="relative z-60 flex flex-col items-center gap-5 px-5 py-10 md:hidden">
+        <h2 className="flex items-baseline font-jp text-[32px] leading-none text-white">
+          <span>機能性</span>
+          <span className="ml-[11px] text-[24px]">×</span>
+          <span className="ml-2">デザイン</span>
+        </h2>
+        <article className="relative h-[160px] w-full overflow-hidden rounded-[15px] bg-[#2f2f2f]">
+          <p className="absolute top-2 left-2.5 z-10 font-jp text-[16px] leading-none text-white">
+            高耐久ヒンジ
+          </p>
+          <Image
+            src={featCards[0].src ?? ""}
+            alt=""
+            width={featCards[0].picW}
+            height={featCards[0].picH}
+            sizes="180px"
+            className="absolute bottom-0 left-1/2 h-[111px] w-[180px] -translate-x-1/2 object-contain object-bottom"
+          />
+        </article>
+        <article
+          data-sp-func-dock
+          className="relative h-[160px] w-full overflow-hidden rounded-[15px] bg-[#2f2f2f]"
+          style={{ backgroundImage: glowBg }}
+        >
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <div
+              data-sp-func-glass
+              aria-hidden
+              className="w-[236px] max-w-full opacity-0"
+            >
+              <Image
+                src={glassFrontImg.src}
+                alt=""
+                width={glassFrontImg.width}
+                height={glassFrontImg.height}
+                sizes="236px"
+                className="h-auto w-full"
+              />
+            </div>
+          </div>
+          <p className="absolute top-2.5 left-2.5 z-20 font-jp text-[16px] leading-none text-white">
+            滑らかなオーバルフレーム
+          </p>
+        </article>
+        <article className="relative h-[160px] w-full overflow-hidden rounded-[15px] bg-[#2f2f2f]">
+          <p className="absolute top-[11px] left-2.5 z-10 font-jp text-[16px] leading-none text-white">
+            フィットするエッジ
+          </p>
+          <Image
+            src={featCards[2].src ?? ""}
+            alt=""
+            width={featCards[2].picW}
+            height={featCards[2].picH}
+            sizes="145px"
+            className="absolute bottom-0 left-1/2 h-[108px] w-[145px] -translate-x-1/2 rounded-b-[15px] object-contain object-bottom"
+          />
+        </article>
+      </div>
+      <div ref={artRef} className="@container relative z-60 mx-auto hidden w-full max-w-360 md:block">
         <h2
           id="func-design-title"
           className="flex cursor-default items-baseline justify-center font-jp text-[4.444cqw] leading-[1.2] text-white select-none"
@@ -484,18 +542,18 @@ export function FuncDesign() {
             >
               <div
                 data-face
-                className={`absolute inset-0 motion-safe:opacity-0 ${card.face}`}
+                className={`absolute inset-0 md:motion-safe:opacity-0 ${card.face}`}
               />
               {card.glow ? (
                 <div
                   data-glow
-                  className="absolute inset-0 motion-safe:opacity-0"
+                  className="absolute inset-0 md:motion-safe:opacity-0"
                   style={{ backgroundImage: glowBg }}
                 />
               ) : null}
               <p
                 data-label
-                className="absolute top-[1.319cqw] left-[0.972cqw] z-10 cursor-default font-jp text-[1.667cqw] leading-[1.2] whitespace-nowrap text-white select-none motion-safe:opacity-0"
+                className="absolute top-[1.319cqw] left-[0.972cqw] z-10 cursor-default font-jp text-[1.667cqw] leading-[1.2] whitespace-nowrap text-white select-none md:motion-safe:opacity-0"
               >
                 {card.title}
               </p>
@@ -505,7 +563,7 @@ export function FuncDesign() {
                     data-glass
                     data-func-glass
                     aria-hidden
-                    className="w-155 shrink-0 motion-safe:opacity-0"
+                    className="w-155 shrink-0 md:motion-safe:opacity-0"
                   >
                     <Image
                       src={glassFrontImg.src}
@@ -521,7 +579,7 @@ export function FuncDesign() {
                 <div
                   data-pic
                   aria-hidden
-                  className={`absolute z-10 overflow-hidden motion-safe:opacity-0 ${card.pic}`}
+                  className={`absolute z-10 overflow-hidden md:motion-safe:opacity-0 ${card.pic}`}
                 >
                   <Image
                     src={card.src}
