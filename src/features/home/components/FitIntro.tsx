@@ -24,7 +24,7 @@ const introOrbs: IntroOrb[] = [
   { x: 56, y: 91, w: 82, h: 50, tone: "mid" },
 ];
 
-/** 右側の塊。左へ 90 度回して右上に置く（元座標から 202 を引く） */
+/** 右側の塊。左へ 180 度回して右上に置く（元座標から 202 を引く） */
 const introOrbsR: IntroOrb[] = [
   { x: 0, y: 0, w: 43, h: 70, tone: "light" },
   { x: 22, y: 22, w: 43, h: 70, tone: "mid" },
@@ -237,9 +237,9 @@ export function FitIntro() {
         if (!box) return;
         const shift = gsap.fromTo(
           box,
-          { y: -boxShiftSp / 2 },
+          { y: boxShiftSp / 2 },
           {
-            y: boxShiftSp / 2,
+            y: -boxShiftSp / 2,
             ease: "none",
             immediateRender: true,
             scrollTrigger: {
@@ -270,7 +270,7 @@ export function FitIntro() {
       <div className="relative flex flex-col gap-[15px] px-5 pt-[27px] pb-[45px] md:hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute top-2 right-2 z-10 h-[108px] w-[148px] origin-center -rotate-90"
+          className="pointer-events-none absolute top-12 right-5 z-10 h-[108px] w-[148px] origin-center -rotate-180"
         >
           {introOrbsR.map((orb) => (
             <div

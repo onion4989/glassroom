@@ -28,63 +28,65 @@ export function Sales() {
       const root = rootRef.current;
       if (!root) return;
 
-      const label = root.querySelector<HTMLElement>("[data-part='label']");
-      const count = root.querySelector<HTMLElement>("[data-part='count']");
-      const suffix = root.querySelector<HTMLElement>("[data-part='suffix']");
-      const asOf = root.querySelector<HTMLElement>("[data-part='asof']");
-      const stroke = root.querySelector<SVGPathElement>("[data-part='stroke']");
-      const btnText = root.querySelector<HTMLElement>("[data-part='btn-text']");
-      const arrow = root.querySelector<HTMLElement>("[data-part='arrow']");
-      const tip = root.querySelector<HTMLElement>("[data-part='tip']");
-      if (
-        !label ||
-        !count ||
-        !suffix ||
-        !asOf ||
-        !stroke ||
-        !btnText ||
-        !arrow ||
-        !tip
-      ) {
-        return;
-      }
-
       const unit = () => (root.clientWidth || artBase) / artBase;
       const mm = gsap.matchMedia();
-      const countObj = { val: 0 };
-      const strokeLen = stroke.getTotalLength();
 
-      const writeCount = (n: number) => {
-        count.textContent = Math.round(n).toLocaleString("en-US");
+      type SalesPart = {
+        label: HTMLElement;
+        count: HTMLElement;
+        suffix: HTMLElement;
+        asOf: HTMLElement;
+        stroke: SVGPathElement;
+        btnText: HTMLElement;
+        arrow: HTMLElement;
+        tip: HTMLElement;
       };
 
-      const hideStroke = () => {
-        gsap.set(stroke, {
-          strokeDasharray: strokeLen,
-          strokeDashoffset: strokeLen,
-        });
+      const readParts = (box: ParentNode): SalesPart | null => {
+        const label = box.querySelector<HTMLElement>("[data-part='label']");
+        const count = box.querySelector<HTMLElement>("[data-part='count']");
+        const suffix = box.querySelector<HTMLElement>("[data-part='suffix']");
+        const asOf = box.querySelector<HTMLElement>("[data-part='asof']");
+        const stroke = box.querySelector<SVGPathElement>(
+          "[data-part='stroke']",
+        );
+        const btnText = box.querySelector<HTMLElement>("[data-part='btn-text']");
+        const arrow = box.querySelector<HTMLElement>("[data-part='arrow']");
+        const tip = box.querySelector<HTMLElement>("[data-part='tip']");
+        if (
+          !label ||
+          !count ||
+          !suffix ||
+          !asOf ||
+          !stroke ||
+          !btnText ||
+          !arrow ||
+          !tip
+        ) {
+          return null;
+        }
+        return { label, count, suffix, asOf, stroke, btnText, arrow, tip };
       };
 
-      const showStroke = () => {
-        gsap.set(stroke, {
-          strokeDasharray: strokeLen,
-          strokeDashoffset: 0,
-        });
+      const showStill = (part: SalesPart) => {
+        const len = part.stroke.getTotalLength();
+        part.count.textContent = countEnd.toLocaleString("en-US");
+        gsap.set(
+          [part.label, part.suffix, part.asOf, part.btnText, part.arrow, part.tip],
+          { autoAlpha: 1, x: 0, y: 0 },
+        );
+        gsap.set(part.stroke, { strokeDasharray: len, strokeDashoffset: 0 });
       };
 
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
-        writeCount(countEnd);
-        gsap.set([label, suffix, asOf, btnText, arrow, tip], {
-          autoAlpha: 1,
-          x: 0,
-          y: 0,
-        });
-        showStroke();
-      });
-
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
+      const playEnter = (part: SalesPart) => {
+        const len = part.stroke.getTotalLength();
+        const countObj = { val: 0 };
         let wait: gsap.core.Tween | null = null;
         let play: gsap.core.Timeline | null = null;
+
+        const writeCount = (n: number) => {
+          part.count.textContent = Math.round(n).toLocaleString("en-US");
+        };
 
         const reset = () => {
           wait?.kill();
@@ -93,13 +95,13 @@ export function Sales() {
           play = null;
           countObj.val = 0;
           writeCount(0);
-          gsap.set(label, { autoAlpha: 0, y: labelRise * unit() });
-          gsap.set(suffix, { autoAlpha: 0, x: -suffixSlide * unit() });
-          gsap.set(asOf, { autoAlpha: 0, y: -noteDrop * unit() });
-          gsap.set(btnText, { autoAlpha: 0 });
-          gsap.set(arrow, { autoAlpha: 0, x: -arrowSlide * unit() });
-          gsap.set(tip, { autoAlpha: 0, x: -tipSlide * unit() });
-          hideStroke();
+          gsap.set(part.label, { autoAlpha: 0, y: labelRise * unit() });
+          gsap.set(part.suffix, { autoAlpha: 0, x: -suffixSlide * unit() });
+          gsap.set(part.asOf, { autoAlpha: 0, y: -noteDrop * unit() });
+          gsap.set(part.btnText, { autoAlpha: 0 });
+          gsap.set(part.arrow, { autoAlpha: 0, x: -arrowSlide * unit() });
+          gsap.set(part.tip, { autoAlpha: 0, x: -tipSlide * unit() });
+          gsap.set(part.stroke, { strokeDasharray: len, strokeDashoffset: len });
         };
 
         const begin = () => {
@@ -108,7 +110,7 @@ export function Sales() {
             const tl = gsap.timeline();
             play = tl;
 
-            tl.to(label, {
+            tl.to(part.label, {
               autoAlpha: 1,
               y: 0,
               duration: fadeDur,
@@ -127,7 +129,7 @@ export function Sales() {
             );
 
             tl.to(
-              suffix,
+              part.suffix,
               {
                 autoAlpha: 1,
                 x: 0,
@@ -138,7 +140,7 @@ export function Sales() {
             );
 
             tl.to(
-              asOf,
+              part.asOf,
               {
                 autoAlpha: 1,
                 y: 0,
@@ -149,7 +151,7 @@ export function Sales() {
             );
 
             tl.to(
-              stroke,
+              part.stroke,
               {
                 strokeDashoffset: 0,
                 duration: edgeDur,
@@ -159,7 +161,7 @@ export function Sales() {
             );
 
             tl.to(
-              btnText,
+              part.btnText,
               {
                 autoAlpha: 1,
                 duration: fadeDur,
@@ -169,7 +171,7 @@ export function Sales() {
             );
 
             tl.to(
-              arrow,
+              part.arrow,
               {
                 autoAlpha: 1,
                 x: 0,
@@ -180,7 +182,7 @@ export function Sales() {
             );
 
             tl.to(
-              tip,
+              part.tip,
               {
                 autoAlpha: 1,
                 x: 0,
@@ -204,6 +206,34 @@ export function Sales() {
           wait?.kill();
           play?.kill();
         };
+      };
+
+      const arm = (sel: string, reduced: boolean) => {
+        const box = root.querySelector(sel);
+        if (!box) return;
+        const part = readParts(box);
+        if (!part) return;
+        if (reduced) {
+          showStill(part);
+          return;
+        }
+        return playEnter(part);
+      };
+
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: reduce)", () => {
+        arm("[data-sales-sp]", true);
+      });
+
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+        return arm("[data-sales-sp]", false);
+      });
+
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
+        arm("[data-sales-pc]", true);
+      });
+
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
+        return arm("[data-sales-pc]", false);
       });
     },
     { scope: rootRef },
@@ -216,37 +246,75 @@ export function Sales() {
       aria-label="累計販売本数"
       className="relative z-10 w-full overflow-hidden bg-[#070707]"
     >
-      <div className="relative z-10 flex flex-col items-center gap-[15px] px-5 py-10 md:hidden">
-        <h2 className="font-jp text-[32px] leading-none tracking-[0.2em] text-white">
+      <div
+        data-sales-sp
+        className="relative z-10 flex flex-col items-center gap-[15px] px-5 py-10 md:hidden"
+      >
+        <h2
+          data-part="label"
+          className="font-jp text-[32px] leading-none tracking-[0.2em] text-white motion-safe:opacity-0"
+        >
           累計販売本数
         </h2>
         <div className="flex items-end text-white">
-          <p className="font-brand text-[64px] leading-none tracking-[0.1em]">
-            15,000
+          <p
+            data-part="count"
+            className="font-brand text-[64px] leading-none tracking-[0.02em] tabular-nums"
+          >
+            0
           </p>
-          <span className="mb-3 ml-1 font-jp text-[16px] leading-none tracking-[0.2em]">
+          <span
+            data-part="suffix"
+            className="mb-3 ml-1 font-jp text-[16px] leading-none tracking-[0.2em] motion-safe:opacity-0"
+          >
             以上
           </span>
         </div>
-        <p className="font-jp text-[16px] leading-none tracking-[0.2em] text-white">
+        <p
+          data-part="asof"
+          className="font-jp text-[16px] leading-none tracking-[0.2em] text-white motion-safe:opacity-0"
+        >
           ※2026年9月現在
         </p>
-        <a
-          href="#"
-          className="relative flex h-[70px] w-full max-w-[350px] items-center justify-center rounded-full border border-white"
-        >
-          <span className="font-jp text-[16px] leading-none tracking-[0.2em] text-white">
+        <div className="relative flex h-[60px] w-[300px] items-center justify-center rounded-full">
+          <svg
+            aria-hidden
+            className="pointer-events-none absolute inset-0 size-full overflow-visible"
+            viewBox="0 0 483 96"
+            preserveAspectRatio="none"
+            overflow="visible"
+          >
+            <path
+              data-part="stroke"
+              d="M 1 48 A 47 47 0 0 1 48 1 H 435 A 47 47 0 0 1 482 48 A 47 47 0 0 1 435 95 H 48 A 47 47 0 0 1 1 48"
+              fill="none"
+              stroke="white"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray={9999}
+              strokeDashoffset={9999}
+              className="motion-reduce:[stroke-dashoffset:0]"
+            />
+          </svg>
+          <span
+            data-part="btn-text"
+            className="font-jp text-[16px] leading-none tracking-[0.2em] text-white motion-safe:opacity-0"
+          >
             お問い合わせはこちらから
           </span>
-          <img
-            src={arrowSrc}
-            alt=""
-            width={8}
-            height={13}
-            className="absolute right-5 h-[13px] w-2"
-          />
-        </a>
-        <p className="text-center font-jp text-[10px] leading-none tracking-[0.2em] text-white">
+          <span
+            data-part="arrow"
+            aria-hidden
+            className="absolute right-5 flex h-[13px] w-2 items-center justify-center motion-safe:opacity-0"
+          >
+            <img src={arrowSrc} alt="" width={8} height={13} className="size-full" />
+          </span>
+        </div>
+        <p
+          data-part="tip"
+          className="text-center font-jp text-[10px] leading-none tracking-[0.2em] text-white motion-safe:opacity-0"
+        >
           在庫のご確認・ご予約、などお気軽にご相談ください。
         </p>
       </div>
@@ -274,7 +342,10 @@ export function Sales() {
           }}
         />
       </div>
-      <div className="@container relative z-10 mx-auto hidden w-full max-w-360 flex-col items-center px-[8.333cqw] py-[10.417cqw] md:flex">
+      <div
+        data-sales-pc
+        className="@container relative z-10 mx-auto hidden w-full max-w-360 flex-col items-center px-[8.333cqw] py-[10.417cqw] md:flex"
+      >
         <h2
           id="sales-title"
           data-part="label"
@@ -286,7 +357,7 @@ export function Sales() {
         <div className="mt-[1.181cqw] flex items-start justify-center gap-[0.625cqw]">
           <p
             data-part="count"
-            className="cursor-default font-brand text-[6.667cqw] leading-none font-normal tracking-[0.2em] text-white tabular-nums select-none"
+            className="cursor-default font-brand text-[6.667cqw] leading-none font-medium tracking-[0.1em] text-white tabular-nums select-none"
           >
             0
           </p>
@@ -305,10 +376,7 @@ export function Sales() {
           ※2026年9月現在
         </p>
 
-        <a
-          href="#"
-          className="relative mt-[4.028cqw] flex h-[6.667cqw] w-[33.542cqw] items-center justify-center rounded-full"
-        >
+        <div className="relative mt-[4.028cqw] flex h-[6.667cqw] w-[33.542cqw] items-center justify-center rounded-full">
           <svg
             aria-hidden
             className="pointer-events-none absolute inset-0 size-full overflow-visible"
@@ -332,7 +400,7 @@ export function Sales() {
           </svg>
           <span
             data-part="btn-text"
-            className="cursor-pointer font-jp text-[1.667cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
+            className="cursor-default font-jp text-[1.667cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
           >
             お問い合わせはこちらから
           </span>
@@ -350,7 +418,7 @@ export function Sales() {
               className="size-full"
             />
           </span>
-        </a>
+        </div>
 
         <p
           data-part="tip"

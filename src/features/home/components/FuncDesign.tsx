@@ -20,8 +20,11 @@ const leaveBackStart = "top 30%";
 const dockKeepTop = 0.05;
 const dockKeepBot = 1;
 const risePx = 20;
-/** StickyGlass の dockRestY と揃える（入場は Sticky 側） */
+/** StickyGlass の dockRestY と揃える */
 const glassRestY = 50;
+/** 箱内眼鏡のフェードアップ */
+const glassDur = 0.45;
+const glassFrom = 36;
 /** 吸着後のラベル／画像入場 */
 const labelDur = 0.35;
 const picDur = 0.4;
@@ -224,6 +227,9 @@ export function FuncDesign() {
         let detail: gsap.core.Timeline | null = null;
         /** 一度入場したら section 退出までタイトル／画像は消さない */
         let detailsShown = false;
+        /** 一度出したら、セクションを上へ抜けるまで消さない */
+        let glassShown = false;
+        let glassTw: gsap.core.Tween | null = null;
         let endRects: BoxRect[] = [];
         const dockEl = root.querySelector<HTMLElement>("[data-func-dock]");
 
@@ -259,8 +265,12 @@ export function FuncDesign() {
             y: () => risePx * artScale(),
           });
           showFaces();
-          // 眼鏡の autoAlpha / scale は StickyGlass が scrub で制御する。
-          gsap.set(glass, { y: glassRestY, x: 0 });
+          gsap.set(glass, {
+            x: 0,
+            scale: 1,
+            y: glassShown ? glassRestY : glassRestY + glassFrom * artScale(),
+            autoAlpha: glassShown ? 1 : 0,
+          });
         };
 
         const buildPlay = () => {
@@ -339,6 +349,43 @@ export function FuncDesign() {
           });
         };
 
+        const hideGlass = () => {
+          glassShown = false;
+          glassTw?.kill();
+          glassTw = null;
+          gsap.set(glass, {
+            autoAlpha: 0,
+            x: 0,
+            scale: 1,
+            y: glassRestY + glassFrom * artScale(),
+          });
+        };
+
+        const showGlass = () => {
+          if (glassShown) {
+            gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestY, scale: 1 });
+            return;
+          }
+          if (glassTw) return;
+          gsap.set(glass, {
+            autoAlpha: 0,
+            x: 0,
+            scale: 1,
+            y: glassRestY + glassFrom * artScale(),
+          });
+          glassTw = gsap.to(glass, {
+            autoAlpha: 1,
+            y: glassRestY,
+            duration: glassDur,
+            ease: "power2.out",
+            onComplete: () => {
+              glassShown = true;
+              glassTw = null;
+              gsap.set(glass, { autoAlpha: 1, y: glassRestY });
+            },
+          });
+        };
+
         const remountCards = () => {
           clearWait();
           play?.kill();
@@ -353,7 +400,12 @@ export function FuncDesign() {
           showFaces();
           if (detailsShown) showDetails();
           else hideDetails();
-          gsap.set(glass, { y: glassRestY, x: 0 });
+          gsap.set(glass, {
+            x: 0,
+            scale: 1,
+            y: glassShown ? glassRestY : glassRestY + glassFrom * artScale(),
+            autoAlpha: glassShown ? 1 : 0,
+          });
         };
 
         const begin = () => {
@@ -424,7 +476,7 @@ export function FuncDesign() {
           start: leaveBackStart,
           onLeaveBack: leaveBack,
         });
-        // イベント取りこぼし用。吸着帯に入ったら入場（済みなら show のみ）。
+        // ラベルは箱の中心が 72% に来たとき。吸着イベントには頼らない。
         if (dockEl) {
           ScrollTrigger.create({
             trigger: dockEl,
@@ -432,12 +484,26 @@ export function FuncDesign() {
             onEnter: beginDetail,
             onEnterBack: beginDetail,
           });
+          ScrollTrigger.create({
+            trigger: dockEl,
+            start: "top 70%",
+            onEnter: showGlass,
+            onEnterBack: showGlass,
+          });
         }
+        // セクションを上へ抜けたあとだけ隠し、次の入場でフェードアップする。
+        ScrollTrigger.create({
+          trigger: root,
+          start: "top bottom",
+          onLeaveBack: hideGlass,
+        });
 
         return () => {
           root.removeEventListener(funcDockEvent, onDock);
           clearWait();
           play?.kill();
+          glassTw?.kill();
+          glassTw = null;
           play = null;
           resetDetails();
         };

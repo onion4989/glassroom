@@ -14,6 +14,8 @@ const scrambleDur = 2.5;
 const scrambleSpeed = 0.3;
 const scrambleChars = "ﾊﾐﾋｰｳｼﾅﾓﾆｻ012345789";
 const shotBox = { w: 996, h: 400, x: 222, y: 200, r: 25 };
+const spShotH = 220;
+const spCardH = 110;
 const detailSrc = "/assets/pages/top/detail/img_detail.jpg";
 const detailAlt = "木のデスクに置かれたFREE FiTフレーム";
 
@@ -43,6 +45,9 @@ export function Detail() {
   const stageRef = useRef<HTMLDivElement>(null);
   const shotRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const spStageRef = useRef<HTMLDivElement>(null);
+  const spShotRef = useRef<HTMLDivElement>(null);
+  const spSpecRef = useRef<HTMLDListElement>(null);
 
   // GSAP は DOM へ同期する。useGSAP が解除時に戻す。
   useGSAP(
@@ -187,6 +192,131 @@ export function Detail() {
           window.removeEventListener("resize", onResize);
         };
       });
+
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: reduce)", () => {
+        const stage = spStageRef.current;
+        const shot = spShotRef.current;
+        if (!stage || !shot) return;
+        const apply = () => {
+          gsap.set(shot, {
+            left: 0,
+            top: 0,
+            width: stage.clientWidth,
+            height: spShotH,
+            borderRadius: 0,
+          });
+        };
+        apply();
+        window.addEventListener("resize", apply);
+        return () => window.removeEventListener("resize", apply);
+      });
+
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+        const stage = spStageRef.current;
+        const shot = spShotRef.current;
+        const spec = spSpecRef.current;
+        if (!stage || !shot || !spec) return;
+
+        let wait: gsap.core.Tween | null = null;
+        let expand: gsap.core.Timeline | null = null;
+        let decode: gsap.core.Tween | null = null;
+        const prog = { p: 0 };
+        const scale = () => (stage.clientWidth || artBase) / artBase;
+
+        const cardBox = () => {
+          const width = shotBox.w * scale();
+          const height = spCardH;
+          return {
+            left: (stage.clientWidth - width) / 2,
+            top: (spShotH - height) / 2,
+            width,
+            height,
+            borderRadius: shotBox.r * scale(),
+          };
+        };
+
+        const endBox = () => ({
+          left: 0,
+          top: 0,
+          width: stage.clientWidth,
+          height: spShotH,
+          borderRadius: 0,
+        });
+
+        const place = (p: number) => {
+          const from = cardBox();
+          const end = endBox();
+          gsap.set(shot, {
+            left: gsap.utils.interpolate(from.left, end.left, p),
+            top: gsap.utils.interpolate(from.top, end.top, p),
+            width: gsap.utils.interpolate(from.width, end.width, p),
+            height: gsap.utils.interpolate(from.height, end.height, p),
+            borderRadius: gsap.utils.interpolate(
+              from.borderRadius,
+              end.borderRadius,
+              p,
+            ),
+          });
+        };
+
+        const runDecode = () => {
+          decode?.kill();
+          const els = spec.querySelectorAll<HTMLElement>("[data-scramble]");
+          if (!els.length) return;
+          decode = gsap.to(els, {
+            duration: scrambleDur,
+            scrambleText: {
+              text: "{original}",
+              chars: scrambleChars,
+              speed: scrambleSpeed,
+            },
+            stagger: 0.08,
+          });
+        };
+
+        const reset = () => {
+          wait?.kill();
+          wait = null;
+          expand?.kill();
+          expand = null;
+          decode?.kill();
+          decode = null;
+          prog.p = 0;
+          place(0);
+        };
+
+        const begin = () => {
+          if (wait || expand) return;
+          wait = gsap.delayedCall(enterLag, () => {
+            const tl = gsap.timeline({ onComplete: runDecode });
+            expand = tl;
+            tl.to(prog, {
+              p: 1,
+              duration: expandDur,
+              ease: "power2.inOut",
+              onUpdate: () => place(prog.p),
+            });
+          });
+        };
+
+        const onResize = () => place(prog.p);
+
+        reset();
+        ScrollTrigger.create({
+          trigger: root,
+          start: enterStart,
+          once: true,
+          onEnter: begin,
+        });
+        window.addEventListener("resize", onResize);
+
+        return () => {
+          wait?.kill();
+          expand?.kill();
+          decode?.kill();
+          window.removeEventListener("resize", onResize);
+        };
+      });
     },
     { scope: rootRef },
   );
@@ -199,22 +329,27 @@ export function Detail() {
       className="relative z-10 w-full bg-[#070707]"
     >
       <div className="py-10 md:hidden">
-        <div className="relative h-[220px] w-full">
-          <Image
-            src={detailSrc}
-            alt={detailAlt}
-            fill
-            sizes="100vw"
-            className="object-cover object-bottom"
-          />
+        <div ref={spStageRef} className="relative h-[220px] w-full">
+          <div ref={spShotRef} className="absolute inset-0 overflow-hidden">
+            <Image
+              src={detailSrc}
+              alt={detailAlt}
+              fill
+              sizes="100vw"
+              className="object-cover object-bottom"
+            />
+          </div>
         </div>
-        <dl className="mx-auto mt-[30px] flex w-full max-w-[350px] flex-col px-5">
+        <dl
+          ref={spSpecRef}
+          className="mx-auto mt-[30px] flex w-full max-w-[350px] flex-col px-5"
+        >
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
             <dt className="font-jp text-[16px] leading-none text-white">
               ブランド
             </dt>
             <dd className="font-jp text-[16px] leading-none text-white">
-              FREE FiT
+              <span data-scramble>FREE FiT</span>
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
@@ -222,7 +357,7 @@ export function Detail() {
               レンズの形
             </dt>
             <dd className="font-jp text-[16px] leading-none text-white">
-              オーバル
+              <span data-scramble>オーバル</span>
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
@@ -230,9 +365,9 @@ export function Detail() {
               素材
             </dt>
             <dd className="font-jp text-[16px] leading-[1.6] text-white">
-              テンプル：剛性チタン
+              <span data-scramble>テンプル：剛性チタン</span>
               <br />
-              フロント：ステンレス
+              <span data-scramble>フロント：ステンレス</span>
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
@@ -240,13 +375,13 @@ export function Detail() {
               サイズ
             </dt>
             <dd className="font-jp text-[16px] leading-[1.6] text-white">
-              レンズ幅：53mm
+              <span data-scramble>レンズ幅：53mm</span>
               <br />
-              テンプル：143mm
+              <span data-scramble>テンプル：143mm</span>
               <br />
-              鼻幅：16mm
+              <span data-scramble>鼻幅：16mm</span>
               <br />
-              天地幅：34mm
+              <span data-scramble>天地幅：34mm</span>
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
@@ -254,7 +389,7 @@ export function Detail() {
               重さ
             </dt>
             <dd className="font-jp text-[16px] leading-none text-white">
-              2mg
+              <span data-scramble>2mg</span>
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 py-4">
@@ -262,7 +397,7 @@ export function Detail() {
               原産国
             </dt>
             <dd className="font-jp text-[16px] leading-none text-white">
-              Made in Japan
+              <span data-scramble>Made in Japan</span>
             </dd>
           </div>
         </dl>
