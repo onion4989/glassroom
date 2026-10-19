@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GLASSROOM
 
-## Getting Started
+架空の眼鏡ブランドの製品紹介ランディングページです。
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## プロジェクトの概要
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+【製品を分かりやすく伝える】
+ ・来訪者に、FREE FiT の形と機能を一つのページで見せる。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+【スクロールで見せる】
+ ・GSAP 3.15 の視差で動的なアニメーションを実装。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+## セクションと主な機能
+ 
+【HEROセクション】
+ ・ファーストインプレッションでブランド名＋店舗概要＋製品イメージを簡単に伝える。
 
-To learn more about Next.js, take a look at the following resources:
+【FREE FiTセクション】
+ ・製品の簡単な説明。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+【Titanセクション】
+ ・テキスト＋動画で製品イメージを高める。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+【4つの特徴セクション】
+ ・それぞれのカードで特徴だけを伝える。
 
-## Deploy on Vercel
+【期間限定モデル】
+ ・アンバーレッドとグレイブルーのフレームを紹介する。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+【製品詳細と累計】
+ ・FREE FiT の仕様と、累計カウントを表示する。
+ 　※お問い合わせの送信機能は置かない。ダミーのみ。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## 技術スタック
+
+【デザイン】
+ ・Figma Pro（Full Seat）
+
+【コーディング エージェント】
+ ・Cursor Pro
+
+【フレームワーク】
+ ・Next.js 16.3（App Router）。1 ページのランディングを `src/` に置くため。
+
+【言語】
+ ・TypeScript 5。コンポーネントの props を型で揃えるため。
+
+【UI】
+ ・React 19.2 / Tailwind CSS 4。Figma の間隔と書体をユーティリティで置くため。
+
+【書体】
+ ・Montserrat Alternates 400 と Noto Sans JP 400。英名と和文を `next/font` で分けるため。
+
+【アニメーション】
+ ・GSAP 3.15 / `@gsap/react` 2.1。視差、入場、ScrollSmoother を一つの登録口で扱うため。
+
+
+## 対応デバイスとブラウザ
+
+【デバイス/サイズ】
+ ・デスクトップ：1440 × 800 
+ ・タブレット：768 × 1024
+ ・モバイル：390 × 844
+
+【ブラウザ】
+ ・Microsoft Edge: 最新2バージョン
+ ・Google Chrome: 最新2バージョン  
+ ・Safari (iOS only): 最新2バージョン  
+ ・Mozilla Firefox: 最新2バージョン
+
+
+## 設計上の工夫
+
+【情報の選別と整理】
+ ・なるべく情報が多くならないように、必要な情報だけに絞ってお問い合わせに誘導させる。
+ ・セクションごとに情報を整理してスッキリさせる。
+
+【デザイン】
+ ・黒色単色の重厚な感じをベースに、デザインを構築。他のカラーは製品カラーのみとし、落ち着いた雰囲気にする。
+
+【アニメーション】
+ ・GSAPを利用することで、一元的にスクロールアニメーションを管理する。
+
+
+## 品質確認
+ 
+【品質管理】
+  品質の管理は、以下とする。
+ ・`npm run lint` が完了すること。
+ ・Viewtest（コンポーネント／ロジック単位）が完了すること。
+ ・Playwright（ブラウザ自動操作の通し確認）が完了すること。
+ ・local上での目視・動作確認が問題ないこと。
+ ・Deploy後に再度、目視・動作確認が問題ないこと。
+
+【確認デバイス】
+ ・デスクトップ：1440 × 800 
+ ・タブレット：768 × 1024
+ ・モバイル：390 × 844
+
+
+## 作者
+
+【名前】
+ ・Takashi Ogawa
+
+【開発期間】
+ ・実働 約 2 週間
+
+【その他】
+ ・ポートフォリオ: https://portfolio.see-u-soon.design
+ ・GitHub: https://github.com/onion4989
+

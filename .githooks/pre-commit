@@ -1,0 +1,29 @@
+#!/bin/sh
+# 秘密ファイルのコミットを止める。.git/hooks/pre-commit から使う。
+
+blocked=0
+paths=$(git diff --cached --name-only --diff-filter=ACMR)
+
+IFS='
+'
+for path in $paths; do
+  [ -n "$path" ] || continue
+  name=${path##*/}
+  case $name in
+    .env | .env.*)
+      if [ "$name" != .env.example ]; then
+        echo "拒否: $path" >&2
+        blocked=1
+      fi
+      ;;
+  esac
+  case $path in
+    *.pem)
+      echo "拒否: $path" >&2
+      blocked=1
+      ;;
+  esac
+done
+unset IFS
+
+exit "$blocked"
