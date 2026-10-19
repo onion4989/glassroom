@@ -14,9 +14,28 @@ const jpFont = Noto_Sans_JP({
   variable: "--font-noto-jp",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://glassroom.see-u-soon.design";
+const pageTitle = "GLASSROOM | FREE FiT";
+const pageDesc =
+  "架空の眼鏡ブランド GLASSROOM の製品紹介。形状記憶チタンの FREE FiT を、1ページで紹介します。";
+
 export const metadata: Metadata = {
-  title: "GLASSROOM",
-  description: "グラスルーム",
+  metadataBase: new URL(siteUrl),
+  title: pageTitle,
+  description: pageDesc,
+  robots: {
+    index: false,
+    follow: false,
+  },
+  openGraph: {
+    title: pageTitle,
+    description: pageDesc,
+    type: "website",
+    locale: "ja_JP",
+    siteName: "GLASSROOM",
+    url: "/",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
