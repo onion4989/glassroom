@@ -43,19 +43,22 @@
  ・Cursor Pro
 
 【フレームワーク】
- ・Next.js 16.3（App Router）。1 ページのランディングを `src/` に置くため。
+ ・Next.js 16.3（App Router）。
 
 【言語】
- ・TypeScript 5。コンポーネントの props を型で揃えるため。
+ ・TypeScript 5。
+   ※コンポーネントの props を型で揃えるため。
 
 【UI】
- ・React 19.2 / Tailwind CSS 4。Figma の間隔と書体をユーティリティで置くため。
+ ・React 19.2 / Tailwind CSS 4。
+　 ※Figma の間隔と書体をユーティリティで置くため。
 
 【書体】
- ・Montserrat Alternates 400 と Noto Sans JP 400。英名と和文を `next/font` で分けるため。
+ ・Montserrat Alternates と Noto Sans JP。
 
 【アニメーション】
- ・GSAP 3.15 / `@gsap/react` 2.1。視差、入場、ScrollSmoother を一つの登録口で扱うため。
+ ・GSAP 3.15 / `@gsap/react` 2.1。
+   ※視差、入場、ScrollSmoother を一つの登録口で扱うため。
 
 
 ## 対応デバイスとブラウザ
@@ -90,6 +93,7 @@
 【品質管理】
   品質の管理は、以下とする。
  ・`npm run lint` が完了すること。
+ ・`npm run typecheck` が完了すること。
  ・Viewtest（コンポーネント／ロジック単位）が完了すること。
  ・Playwright（ブラウザ自動操作の通し確認）が完了すること。
  ・local上での目視・動作確認が問題ないこと。
