@@ -1,17 +1,31 @@
 import type { Metadata } from "next";
-import { Montserrat_Alternates, Noto_Sans_JP } from "next/font/google";
+import { Inter, Montserrat_Alternates, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 
 const brandFont = Montserrat_Alternates({
-  weight: ["400", "500", "700"],
+  weight: ["400", "500"],
   subsets: ["latin"],
   variable: "--font-montserrat",
+  display: "swap",
+  adjustFontFallback: true,
+});
+
+const numFont = Inter({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  adjustFontFallback: true,
 });
 
 const jpFont = Noto_Sans_JP({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-noto-jp",
+  display: "swap",
+  adjustFontFallback: true,
+  // Hero LCP 画像と帯域を奪い合わない（和文は描画後に充てる）
+  preload: false,
 });
 
 const siteUrl =
@@ -42,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ja"
-      className={`${brandFont.variable} ${jpFont.variable} h-full antialiased`}
+      className={`${brandFont.variable} ${numFont.variable} ${jpFont.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

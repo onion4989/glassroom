@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { spGlassLine } from "@/features/home/components/StickyGlass";
-import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
 const letterY = 50;
 const letterStep = 0.03;
@@ -41,7 +41,8 @@ type TitanBit = {
   top: string;
   left: string;
   size: string;
-  brand?: boolean;
+  /** 数値（Inter） */
+  num?: boolean;
   head?: boolean;
 };
 
@@ -82,14 +83,14 @@ const titanBits: TitanBit[] = [
     top: "top-[9.097cqw]",
     left: "left-[65.903cqw]",
     size: "text-[8.889cqw]",
-    brand: true,
+    num: true,
   },
   {
     text: "mg",
     top: "top-[12.986cqw]",
     left: "left-[71.806cqw]",
     size: "text-[3.333cqw]",
-    brand: true,
+    num: true,
   },
   {
     text: "仕事",
@@ -138,7 +139,7 @@ const titanBits: TitanBit[] = [
 const bitClass = (bit: TitanBit) =>
   [
     "absolute cursor-default leading-none whitespace-nowrap text-white select-none",
-    bit.brand ? "font-brand" : "font-jp",
+    bit.num ? "font-num" : "font-jp",
     bit.top,
     bit.left,
     bit.size,
@@ -340,157 +341,169 @@ export function Titan() {
       });
 
       mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
-        const held: gsap.core.Animation[] = [];
-        const prep = (list: HTMLElement[]) =>
-          list.flatMap((el) => {
-            const split = SplitText.create(el, {
-              type: "chars",
-              tag: "span",
-              aria: "auto",
+        // SplitText は md+ のみ。Mobile 初回チャンクから外す。
+        let cancelled = false;
+        let teardown: (() => void) | undefined;
+        void import("@/lib/gsap-split").then(({ SplitText }) => {
+          if (cancelled) return;
+          const held: gsap.core.Animation[] = [];
+          const prep = (list: HTMLElement[]) =>
+            list.flatMap((el) => {
+              const split = SplitText.create(el, {
+                type: "chars",
+                tag: "span",
+                aria: "auto",
+              });
+              if (!split.chars.length) return [];
+              split.chars.forEach((ch) => {
+                if (!(ch instanceof HTMLElement)) return;
+                ch.style.display = "inline-block";
+              });
+              const rise = gsap.from(split.chars, {
+                y: letterY,
+                opacity: 0,
+                stagger: letterStep,
+                duration: letterDur,
+                ease: "back.out(1.7)",
+                paused: true,
+                immediateRender: true,
+              });
+              held.push(rise);
+              return [{ split, rise, count: split.chars.length }];
             });
-            if (!split.chars.length) return [];
-            split.chars.forEach((ch) => {
-              if (!(ch instanceof HTMLElement)) return;
-              ch.style.display = "inline-block";
+          const visible = (el: HTMLElement) => el.offsetParent !== null;
+          const upNodes = [
+            ...root.querySelectorAll<HTMLElement>('[data-band="up"]'),
+          ].filter(visible);
+          const lowNodes = [
+            ...root.querySelectorAll<HTMLElement>('[data-band="low"]'),
+          ].filter(visible);
+          const upParts = prep(upNodes);
+          const lowParts = prep(lowNodes);
+          const spanOf = (parts: { count: number }[]) => {
+            const max = Math.max(0, ...parts.map((part) => part.count));
+            return letterDur + letterStep * Math.max(0, max - 1);
+          };
+          const videoWaits: gsap.core.Tween[] = [];
+          const textWaits: gsap.core.Tween[] = [];
+          let upDone = false;
+          let lowSeen = false;
+          let lowPlay = false;
+          const stopVideoWaits = () => {
+            videoWaits.forEach((tween) => tween.kill());
+            videoWaits.length = 0;
+          };
+          const stopTextWaits = () => {
+            textWaits.forEach((tween) => tween.kill());
+            textWaits.length = 0;
+          };
+          const park = () => {
+            stopVideoWaits();
+            stopTextWaits();
+            upDone = false;
+            lowPlay = false;
+            resetVideo();
+            [...upParts, ...lowParts].forEach(({ rise }) => rise.pause(0));
+          };
+          const tryLow = () => {
+            if (!upDone || !lowSeen || lowPlay) return;
+            lowPlay = true;
+            lowParts.forEach(({ rise }) => rise.play());
+          };
+          const lowIn = () => {
+            const el = lowNodes[0];
+            if (!el) return false;
+            return el.getBoundingClientRect().top < window.innerHeight * 0.85;
+          };
+          const beginVideo = () => {
+            stopVideoWaits();
+            const waitVideo = gsap.delayedCall(videoLag, () => {
+              video.playbackRate = smokeRate;
+              const play = video.play();
+              startPaint();
+              if (play) play.catch(() => undefined);
             });
-            const rise = gsap.from(split.chars, {
-              y: letterY,
-              opacity: 0,
-              stagger: letterStep,
-              duration: letterDur,
-              ease: "back.out(1.7)",
-              paused: true,
-              immediateRender: true,
+            videoWaits.push(waitVideo);
+          };
+          const beginText = () => {
+            stopTextWaits();
+            upDone = false;
+            lowPlay = false;
+            lowSeen = lowIn();
+            [...upParts, ...lowParts].forEach(({ rise }) => rise.pause(0));
+            const waitText = gsap.delayedCall(letterLag, () => {
+              upParts.forEach(({ rise }) => rise.play());
+              const after = gsap.delayedCall(spanOf(upParts), () => {
+                upDone = true;
+                if (lowIn()) lowSeen = true;
+                tryLow();
+              });
+              textWaits.push(after);
             });
-            held.push(rise);
-            return [{ split, rise, count: split.chars.length }];
-          });
-        const upNodes = [
-          ...root.querySelectorAll<HTMLElement>('[data-band="up"]'),
-        ];
-        const lowNodes = [
-          ...root.querySelectorAll<HTMLElement>('[data-band="low"]'),
-        ];
-        const upParts = prep(upNodes);
-        const lowParts = prep(lowNodes);
-        const spanOf = (parts: { count: number }[]) => {
-          const max = Math.max(0, ...parts.map((part) => part.count));
-          return letterDur + letterStep * Math.max(0, max - 1);
-        };
-        const videoWaits: gsap.core.Tween[] = [];
-        const textWaits: gsap.core.Tween[] = [];
-        let upDone = false;
-        let lowSeen = false;
-        let lowPlay = false;
-        const stopVideoWaits = () => {
-          videoWaits.forEach((tween) => tween.kill());
-          videoWaits.length = 0;
-        };
-        const stopTextWaits = () => {
-          textWaits.forEach((tween) => tween.kill());
-          textWaits.length = 0;
-        };
-        const park = () => {
-          stopVideoWaits();
-          stopTextWaits();
-          upDone = false;
-          lowPlay = false;
-          resetVideo();
-          [...upParts, ...lowParts].forEach(({ rise }) => rise.pause(0));
-        };
-        const tryLow = () => {
-          if (!upDone || !lowSeen || lowPlay) return;
-          lowPlay = true;
-          lowParts.forEach(({ rise }) => rise.play());
-        };
-        const lowIn = () => {
-          const el = lowNodes[0];
-          if (!el) return false;
-          return el.getBoundingClientRect().top < window.innerHeight * 0.85;
-        };
-        const beginVideo = () => {
-          stopVideoWaits();
-          const waitVideo = gsap.delayedCall(videoLag, () => {
-            video.playbackRate = smokeRate;
-            const play = video.play();
-            startPaint();
-            if (play) play.catch(() => undefined);
-          });
-          videoWaits.push(waitVideo);
-        };
-        const beginText = () => {
-          stopTextWaits();
-          upDone = false;
-          lowPlay = false;
-          lowSeen = lowIn();
-          [...upParts, ...lowParts].forEach(({ rise }) => rise.pause(0));
-          const waitText = gsap.delayedCall(letterLag, () => {
-            upParts.forEach(({ rise }) => rise.play());
-            const after = gsap.delayedCall(spanOf(upParts), () => {
-              upDone = true;
-              if (lowIn()) lowSeen = true;
-              tryLow();
-            });
-            textWaits.push(after);
-          });
-          textWaits.push(waitText);
-        };
-        ScrollTrigger.create({
-          trigger: root,
-          start: "top 80%",
-          end: "bottom top",
-          onEnter: beginVideo,
-          onEnterBack: beginVideo,
-          onLeave: park,
-          onLeaveBack: park,
-        });
-        ScrollTrigger.create({
-          trigger: root,
-          start: "center center",
-          end: "bottom top",
-          onEnter: beginText,
-          onEnterBack: beginText,
-        });
-        if (lowNodes[0]) {
+            textWaits.push(waitText);
+          };
           ScrollTrigger.create({
-            trigger: lowNodes[0],
-            start: "top 85%",
-            onEnter: () => {
-              lowSeen = true;
-              tryLow();
-            },
-            onEnterBack: () => {
-              lowSeen = true;
-              tryLow();
-            },
-            onLeave: () => {
-              lowSeen = false;
-            },
-            onLeaveBack: () => {
-              lowSeen = false;
-            },
+            trigger: root,
+            start: "top 80%",
+            end: "bottom top",
+            onEnter: beginVideo,
+            onEnterBack: beginVideo,
+            onLeave: park,
+            onLeaveBack: park,
           });
-        }
-        // sticky（画面中央）と重なったとき、短い pin で一度ロック。上下どちらでも再ロック。
-        const dock = root.querySelector<HTMLElement>("[data-titan-dock]");
-        let dockPin: ScrollTrigger | null = null;
-        if (dock) {
-          dockPin = ScrollTrigger.create({
-            trigger: dock,
+          ScrollTrigger.create({
+            trigger: root,
             start: "center center",
-            end: dockDwell,
-            pin: root,
-            pinSpacing: true,
-            anticipatePin: 1,
+            end: "bottom top",
+            onEnter: beginText,
+            onEnterBack: beginText,
           });
-        }
-        resetVideo();
+          if (lowNodes[0]) {
+            ScrollTrigger.create({
+              trigger: lowNodes[0],
+              start: "top 85%",
+              onEnter: () => {
+                lowSeen = true;
+                tryLow();
+              },
+              onEnterBack: () => {
+                lowSeen = true;
+                tryLow();
+              },
+              onLeave: () => {
+                lowSeen = false;
+              },
+              onLeaveBack: () => {
+                lowSeen = false;
+              },
+            });
+          }
+          // Desktop: sticky（画面中央）と重なったとき短い pin。
+          // Tablet: セクション pin すると Sticky と二重になり位置がずれるため付けない。
+          const dock = root.querySelector<HTMLElement>("[data-titan-dock]");
+          let dockPin: ScrollTrigger | null = null;
+          if (dock && window.matchMedia("(min-width: 1024px)").matches) {
+            dockPin = ScrollTrigger.create({
+              trigger: dock,
+              start: "center center",
+              end: dockDwell,
+              pin: root,
+              pinSpacing: true,
+              anticipatePin: 1,
+            });
+          }
+          resetVideo();
+          teardown = () => {
+            dockPin?.kill();
+            stopVideoWaits();
+            stopTextWaits();
+            held.forEach((tween) => tween.kill());
+            [...upParts, ...lowParts].forEach(({ split }) => split.revert());
+          };
+        });
         return () => {
-          dockPin?.kill();
-          stopVideoWaits();
-          stopTextWaits();
-          held.forEach((tween) => tween.kill());
-          [...upParts, ...lowParts].forEach(({ split }) => split.revert());
+          cancelled = true;
+          teardown?.();
         };
       });
 
@@ -531,10 +544,10 @@ export function Titan() {
           <p className="absolute top-[15px] left-[153px] text-[24px] leading-none">
             わずか
           </p>
-          <p className="absolute top-0 left-[228px] font-brand text-[48px] leading-none">
+          <p className="absolute top-0 left-[228px] font-num text-[48px] leading-none">
             2
           </p>
-          <p className="absolute top-[15px] left-[261px] font-brand text-[24px] leading-none">
+          <p className="absolute top-[15px] left-[261px] font-num text-[24px] leading-none">
             mg
           </p>
         </div>
@@ -584,15 +597,16 @@ export function Titan() {
           </>
         ) : null}
       </div>
-      <div className="@container relative z-10 mx-auto hidden h-[55.556cqw] w-full max-w-360 md:block">
+      {/* Tablet: 高さ 500・吸着中央。Desktop: cqw @1440 */}
+      <div className="@container relative z-10 mx-auto hidden h-[500px] w-full max-w-360 md:block lg:h-[55.556cqw]">
         <div
           data-titan-dock
           aria-hidden
-          className="pointer-events-none absolute left-1/2 size-px -translate-x-1/2 -translate-y-1/2"
+          className="pointer-events-none absolute left-1/2 size-px -translate-x-1/2 -translate-y-1/2 max-lg:!top-[292px]"
           style={{ top: `${dockTopCqw}cqw` }}
         />
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 hidden lg:block"
           style={
             upTextShift
               ? { transform: `translateY(${upTextShift}cqw)` }
@@ -620,9 +634,60 @@ export function Titan() {
             );
           })}
         </div>
+        {/* Tablet 固定タイポ（Figma 768: 見出し直下に flex 1行） */}
+        <div className="absolute inset-x-0 top-[100px] flex flex-col items-start px-[103px] lg:hidden">
+          <h2
+            data-band="up"
+            className="cursor-default font-jp text-[40px] leading-none whitespace-nowrap text-white select-none"
+          >
+            形状記憶チタンフレーム
+          </h2>
+          <div className="mt-1 ml-[160px] flex items-center gap-1">
+            <p
+              data-band="up"
+              className="cursor-default font-jp text-[32px] leading-none text-white select-none"
+            >
+              圧倒的
+            </p>
+            <p
+              data-band="up"
+              className="cursor-default font-jp text-[24px] leading-none text-white select-none"
+            >
+              な
+            </p>
+            <p
+              data-band="up"
+              className="cursor-default font-jp text-[32px] leading-none text-white select-none"
+            >
+              軽さ
+            </p>
+            <p
+              data-band="up"
+              className="cursor-default font-jp text-[32px] leading-none text-white select-none"
+            >
+              わずか
+            </p>
+            <p
+              data-band="up"
+              className="cursor-default font-num text-[64px] leading-none text-white select-none"
+            >
+              2
+            </p>
+            <p
+              data-band="up"
+              className="cursor-default font-num text-[32px] leading-none text-white select-none"
+            >
+              mg
+            </p>
+          </div>
+        </div>
         {showLowCopy
           ? titanBits.slice(upCount).map((bit) => (
-              <p key={bit.text} data-band="low" className={bitClass(bit)}>
+              <p
+                key={bit.text}
+                data-band="low"
+                className={`${bitClass(bit)} hidden lg:block`}
+              >
                 {bit.text}
               </p>
             ))

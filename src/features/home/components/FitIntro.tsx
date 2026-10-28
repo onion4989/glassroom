@@ -136,38 +136,7 @@ export function FitIntro() {
         });
       });
 
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
-        const blink = caret
-          ? gsap.fromTo(
-              caret,
-              { opacity: 1 },
-              {
-                opacity: 0,
-                duration: 0.45,
-                repeat: -1,
-                yoyo: true,
-                ease: "steps(1)",
-                paused: true,
-                immediateRender: false,
-              },
-            )
-          : null;
-
-        gsap.to(title, {
-          duration: typeDur,
-          delay: typeLag,
-          text: { value: fitTitle, delimiter: "" },
-          ease: "none",
-          scrollTrigger: {
-            trigger: root,
-            start: "top 75%",
-            once: true,
-          },
-          onStart: () => {
-            blink?.restart();
-          },
-        });
-
+      const scrubIntroArt = () => {
         // 上端 55%〜10% で箱が入る。戻すと逆に戻る。
         gsap.fromTo(
           boxFade,
@@ -226,6 +195,51 @@ export function FitIntro() {
 
         scrubY(glassA, glassShiftA);
         scrubY(glassB, glassShiftB);
+      };
+
+      // Tablet: タイトル常時表示。吸着なし（Sticky は通過のみ）。
+      mm.add(
+        "(min-width: 768px) and (max-width: 1023px) and (prefers-reduced-motion: no-preference)",
+        () => {
+          title.textContent = fitTitle;
+          if (caret) gsap.set(caret, { autoAlpha: 0 });
+          scrubIntroArt();
+        },
+      );
+
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
+        const blink = caret
+          ? gsap.fromTo(
+              caret,
+              { opacity: 1 },
+              {
+                opacity: 0,
+                duration: 0.45,
+                repeat: -1,
+                yoyo: true,
+                ease: "steps(1)",
+                paused: true,
+                immediateRender: false,
+              },
+            )
+          : null;
+
+        gsap.to(title, {
+          duration: typeDur,
+          delay: typeLag,
+          text: { value: fitTitle, delimiter: "" },
+          ease: "none",
+          scrollTrigger: {
+            trigger: root,
+            start: "top 75%",
+            once: true,
+          },
+          onStart: () => {
+            blink?.restart();
+          },
+        });
+
+        scrubIntroArt();
 
         return () => {
           blink?.kill();
@@ -321,22 +335,23 @@ export function FitIntro() {
         </div>
       </div>
       <div className="hidden md:block">
-      <div className="@container relative mx-auto h-[55.556cqw] w-full max-w-360">
+      {/* Tablet: 固定寸法（Figma 768）。Desktop: cqw @1440 */}
+      <div className="@container relative mx-auto h-[700px] w-full max-w-360 px-8 pt-[100px] lg:h-[55.556cqw] lg:px-0 lg:pt-0">
         <GlassCluster
           pieces={glassAPieces}
           parallax="a"
-          className="top-1/2 left-[5.556cqw] -translate-y-1/2"
-          sizeClass="h-[24.306cqw] w-[23.472cqw]"
+          className="top-[270px] left-8 lg:top-1/2 lg:left-[5.556cqw] lg:-translate-y-1/2"
+          sizeClass="h-[224px] w-[217px] lg:h-[24.306cqw] lg:w-[23.472cqw]"
         />
         <GlassCluster
           pieces={glassBPieces}
           parallax="b"
-          className="top-[2.083cqw] right-[5.556cqw]"
-          sizeClass="h-[21.389cqw] w-[29.306cqw]"
+          className="top-[100px] right-0 lg:top-[2.083cqw] lg:right-[5.556cqw]"
+          sizeClass="h-[197px] w-[271px] lg:h-[21.389cqw] lg:w-[29.306cqw]"
         />
         <h2
           id="fit-intro-title"
-          className="absolute top-[5cqw] left-[8.333cqw] z-30 cursor-default font-jp text-[6.667cqw] leading-none whitespace-nowrap text-white select-none"
+          className="absolute top-[100px] left-8 z-40 cursor-default font-jp text-[48px] leading-none whitespace-nowrap text-white select-none lg:top-[5cqw] lg:left-[8.333cqw] lg:text-[6.667cqw]"
         >
           <span className="sr-only">{fitTitle}</span>
           <span ref={titleRef} aria-hidden="true" />
@@ -348,13 +363,13 @@ export function FitIntro() {
         </h2>
         <div
           ref={boxMoveRef}
-          className="absolute top-[34.722cqw] left-[55.417cqw] z-30 w-[36.25cqw]"
+          className="absolute top-[375px] left-[305px] z-30 w-[431px] lg:top-[34.722cqw] lg:left-[55.417cqw] lg:w-[36.25cqw]"
         >
           <div
             ref={boxFadeRef}
-            className="h-[20.556cqw] rounded-[1.042cqw] bg-black/40 px-[1.25cqw] pt-[1.389cqw] backdrop-blur-md md:motion-safe:opacity-0"
+            className="h-[206px] rounded-[15px] bg-black/40 px-[17px] pt-[17px] backdrop-blur-md md:motion-safe:opacity-0 lg:h-[20.556cqw] lg:rounded-[1.042cqw] lg:px-[1.25cqw] lg:pt-[1.389cqw]"
           >
-            <p className="font-jp text-[1.389cqw] leading-[1.75] tracking-[0.1em] text-white">
+            <p className="font-jp text-[16px] leading-[25px] tracking-[0.1em] text-white lg:text-[1.389cqw] lg:leading-[1.75]">
               {fitCopy}
             </p>
           </div>

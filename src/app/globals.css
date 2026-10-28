@@ -2,6 +2,7 @@
 
 @theme inline {
   --font-brand: var(--font-montserrat);
+  --font-num: var(--font-inter);
   --font-jp: var(--font-noto-jp);
 }
 

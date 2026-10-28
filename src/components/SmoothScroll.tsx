@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, type ReactNode } from "react";
-import { gsap, ScrollSmoother, useGSAP } from "@/lib/gsap";
+import { gsap, useGSAP } from "@/lib/gsap";
+import { ScrollSmoother } from "@/lib/gsap-smoother";
 
 const smoothSec = 1;
 

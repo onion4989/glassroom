@@ -31,24 +31,24 @@ export function Footer() {
         </div>
       </div>
       <div className="@container hidden w-full md:block">
-        <div className="relative h-[20.833cqw] w-full border-t border-white">
-          <div className="absolute top-0 left-[36.806cqw] h-full w-[63.194cqw] overflow-hidden">
+        <div className="relative h-[160px] w-full border-t border-white lg:h-[20.833cqw]">
+          <div className="absolute top-0 right-0 h-full w-[464px] overflow-hidden lg:left-[36.806cqw] lg:w-[63.194cqw]">
             <Image
               src={imgSrc}
               alt={imgAlt}
               fill
-              sizes="63vw"
+              sizes="(min-width: 1024px) 63vw, 464px"
               className="object-cover object-bottom"
             />
           </div>
 
-          <p className="absolute top-[5.903cqw] left-[2.014cqw] w-[31.458cqw] cursor-default font-brand text-[3.333cqw] leading-none tracking-[0.3em] text-white select-none">
+          <p className="absolute top-[46px] left-11 w-[227px] cursor-default font-brand text-[24px] leading-none tracking-[0.3em] text-white select-none lg:top-[5.903cqw] lg:left-[2.014cqw] lg:w-[31.458cqw] lg:text-[3.333cqw]">
             GLASSROOM
           </p>
-          <p className="absolute top-[10.347cqw] left-[13.611cqw] cursor-default font-jp text-[1.111cqw] leading-none tracking-[0.3em] whitespace-nowrap text-white select-none">
+          <p className="absolute top-[80px] left-11 w-[227px] cursor-default text-center font-jp text-[12px] leading-none tracking-[0.3em] whitespace-nowrap text-white select-none lg:top-[10.347cqw] lg:left-[13.611cqw] lg:w-auto lg:text-left lg:text-[1.111cqw]">
             グラスルーム
           </p>
-          <address className="absolute top-[12.431cqw] left-[5.347cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.3em] whitespace-nowrap text-white not-italic select-none">
+          <address className="absolute top-[99px] left-11 cursor-default font-jp text-[12px] leading-none tracking-[0.3em] whitespace-nowrap text-white not-italic select-none lg:top-[12.431cqw] lg:left-[5.347cqw] lg:text-[1.389cqw]">
             東京都〇〇〇区〇〇〇町1-1-2
           </address>
         </div>
