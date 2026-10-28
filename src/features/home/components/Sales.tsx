@@ -259,7 +259,7 @@ export function Sales() {
         <div className="flex items-end text-white">
           <p
             data-part="count"
-            className="font-brand text-[64px] leading-none tracking-[0.02em] tabular-nums"
+            className="font-num text-[64px] leading-none tracking-[0.02em] tabular-nums"
           >
             0
           </p>
@@ -344,26 +344,26 @@ export function Sales() {
       </div>
       <div
         data-sales-pc
-        className="@container relative z-10 mx-auto hidden w-full max-w-360 flex-col items-center px-[8.333cqw] py-[10.417cqw] md:flex"
+        className="@container relative z-10 mx-auto hidden w-full max-w-360 flex-col items-center px-[80px] py-[100px] md:flex lg:px-[8.333cqw] lg:py-[10.417cqw]"
       >
         <h2
           id="sales-title"
           data-part="label"
-          className="cursor-default font-jp text-[3.333cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
+          className="cursor-default font-jp text-[40px] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0 lg:text-[3.333cqw]"
         >
           累計販売本数
         </h2>
 
-        <div className="mt-[1.181cqw] flex items-start justify-center gap-[0.625cqw]">
+        <div className="mt-[14px] flex items-start justify-center gap-2 lg:mt-[1.181cqw] lg:gap-[0.625cqw]">
           <p
             data-part="count"
-            className="cursor-default font-brand text-[6.667cqw] leading-none font-medium tracking-[0.1em] text-white tabular-nums select-none"
+            className="cursor-default font-num text-[64px] leading-none font-medium tracking-[0.2em] text-white tabular-nums select-none lg:text-[6.667cqw] lg:tracking-[0.1em]"
           >
             0
           </p>
           <span
             data-part="suffix"
-            className="mt-[3.264cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
+            className="mt-[25px] cursor-default font-jp text-[24px] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0 lg:mt-[3.264cqw] lg:text-[1.389cqw]"
           >
             以上
           </span>
@@ -371,12 +371,12 @@ export function Sales() {
 
         <p
           data-part="asof"
-          className="mt-[2.153cqw] cursor-default font-jp text-[1.389cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
+          className="mt-[14px] cursor-default font-jp text-[20px] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0 lg:mt-[2.153cqw] lg:text-[1.389cqw]"
         >
           ※2026年9月現在
         </p>
 
-        <div className="relative mt-[4.028cqw] flex h-[6.667cqw] w-[33.542cqw] items-center justify-center rounded-full">
+        <div className="relative mt-[40px] flex h-20 w-[440px] items-center justify-center rounded-full lg:mt-[4.028cqw] lg:h-[6.667cqw] lg:w-[33.542cqw]">
           <svg
             aria-hidden
             className="pointer-events-none absolute inset-0 size-full overflow-visible"
@@ -400,14 +400,14 @@ export function Sales() {
           </svg>
           <span
             data-part="btn-text"
-            className="cursor-default font-jp text-[1.667cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
+            className="cursor-default font-jp text-[20px] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0 lg:text-[1.667cqw]"
           >
             お問い合わせはこちらから
           </span>
           <span
             data-part="arrow"
             aria-hidden
-            className="absolute right-[1.944cqw] flex h-[1.25cqw] w-[0.764cqw] items-center justify-center md:motion-safe:opacity-0"
+            className="absolute right-8 flex h-[18px] w-[11px] items-center justify-center md:motion-safe:opacity-0 lg:right-[1.944cqw] lg:h-[1.25cqw] lg:w-[0.764cqw]"
           >
             {/* next/image は既定で SVG 不可のため img */}
             <img
@@ -422,7 +422,7 @@ export function Sales() {
 
         <p
           data-part="tip"
-          className="mt-[1.111cqw] cursor-default text-center font-jp text-[1.111cqw] leading-none tracking-[0.2em] text-white select-none md:motion-safe:opacity-0"
+          className="mt-[14px] cursor-default text-center font-jp text-[16px] leading-none tracking-[0.2em] whitespace-nowrap text-white select-none md:motion-safe:opacity-0 lg:mt-[1.111cqw] lg:text-[1.111cqw]"
         >
           在庫のご確認・ご予約、などお気軽にご相談ください。
         </p>

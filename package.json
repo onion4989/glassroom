@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "node scripts/run-checked.mjs view",
     "test:e2e": "node scripts/run-checked.mjs e2e"

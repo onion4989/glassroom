@@ -21,26 +21,26 @@ export default function Home() {
           className="relative flex flex-col gap-[6px] md:block"
         >
           <Hero glass={<StickyGlass />} />
-          <div className="flex flex-col gap-[6px] md:mt-[150px] md:gap-0">
-            <div className="md:mb-[150px]">
+          <div className="flex flex-col gap-[6px] md:mt-0 md:gap-0 lg:mt-[150px]">
+            <div className="lg:mb-[150px]">
               <FitIntro />
             </div>
-            <div className="md:mb-[150px]">
+            <div className="lg:mb-[150px]">
               <Titan />
             </div>
-            <div className="md:mb-[150px]">
+            <div className="lg:mb-[150px]">
               <Feature />
             </div>
-            <div className="md:mb-[150px]">
+            <div className="lg:mb-[150px]">
               <FuncDesign />
             </div>
-            <div className="md:mb-[150px]">
+            <div className="lg:mb-[150px]">
               <Model />
             </div>
-            <div className="md:mb-[150px]">
+            <div className="lg:mb-[150px]">
               <Detail />
             </div>
-            <div className="md:mb-[150px]">
+            <div className="lg:mb-[150px]">
               <Sales />
             </div>
             <Footer />

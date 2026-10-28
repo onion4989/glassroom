@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import { useRef } from "react";
+import {
+  glassFrontImg,
+  glassFrontSizes,
+} from "@/features/home/data/glass-front";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 
-export const glassFrontImg = {
-  src: "/assets/pages/top/hero/glass_front-normal.png",
-  width: 620,
-  height: 173,
-} as const;
+export { glassFrontImg, glassFrontSizes };
 
 const coverBlur = "blur(12px)";
 /** 縮小・追従の開始（Model 上端がこの位置に来たら） */
@@ -67,7 +67,110 @@ export function StickyGlass() {
       const funcGlass = stack.querySelector<HTMLElement>("[data-func-glass]");
 
       const mm = gsap.matchMedia();
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
+
+      // Tablet: Hero 自然位置から pin。FitIntro 通過 / Titan 最終。
+      // 吸着中はブラーなし・位置固定。退場は不透明度のみ→非表示→pin 解除。
+      mm.add(
+        "(min-width: 768px) and (max-width: 1023px) and (prefers-reduced-motion: no-preference)",
+        () => {
+          if (!fade) return;
+          const titan = stack.querySelector<HTMLElement>("[data-titan]");
+
+          gsap.set(fade, {
+            transformOrigin: "center center",
+            x: 0,
+            y: 0,
+            scale: 1,
+            autoAlpha: 1,
+            filter: "blur(0px)",
+          });
+          gsap.set(el, { zIndex: 20 });
+          if (normalImg) gsap.set(normalImg, { autoAlpha: 1 });
+
+          const pin = ScrollTrigger.create({
+            trigger: el,
+            start: () => `top ${Math.round(spGlassLine("top"))}px`,
+            endTrigger: titan ?? el,
+            // 退場フェード完了より後まで pin（解除＝上ジャンプ）
+            end: titan ? "bottom top-=120" : "bottom bottom",
+            pin: true,
+            pinSpacing: false,
+            anticipatePin: 0,
+            invalidateOnRefresh: true,
+          });
+
+          let exitTl: gsap.core.Timeline | null = null;
+          if (titan) {
+            // セクションがほぼ画面外に出てから消す（吸着中は触らない）
+            exitTl = gsap.timeline({
+              scrollTrigger: {
+                trigger: titan,
+                start: "bottom 20%",
+                end: "bottom top-=80",
+                scrub: true,
+                invalidateOnRefresh: true,
+                onLeave: () => {
+                  gsap.set(fade, {
+                    autoAlpha: 0,
+                    filter: "blur(0px)",
+                    x: 0,
+                    y: 0,
+                  });
+                  gsap.set(el, { display: "none" });
+                },
+                onEnterBack: () => {
+                  gsap.set(el, { display: "block" });
+                  gsap.set(fade, {
+                    autoAlpha: 1,
+                    filter: "blur(0px)",
+                    x: 0,
+                    y: 0,
+                  });
+                },
+              },
+            });
+            // ブラーなし。位置も動かさない
+            exitTl.fromTo(
+              fade,
+              { autoAlpha: 1, filter: "blur(0px)", x: 0, y: 0 },
+              {
+                autoAlpha: 0,
+                filter: "blur(0px)",
+                x: 0,
+                y: 0,
+                ease: "none",
+              },
+            );
+          }
+
+          return () => {
+            exitTl?.scrollTrigger?.kill();
+            exitTl?.kill();
+            pin.kill();
+            gsap.set(el, { clearProps: "zIndex,display" });
+            gsap.set(fade, {
+              clearProps: "transform,filter,opacity,visibility",
+            });
+          };
+        },
+      );
+
+      mm.add(
+        "(min-width: 768px) and (max-width: 1023px) and (prefers-reduced-motion: reduce)",
+        () => {
+          if (!fade) return;
+          gsap.set(fade, {
+            filter: "none",
+            x: 0,
+            y: 0,
+            scale: 1,
+            autoAlpha: 1,
+          });
+          if (normalImg) gsap.set(normalImg, { autoAlpha: 1 });
+        },
+      );
+
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
         if (!fade) return;
 
         gsap.set(fade, {
@@ -246,7 +349,7 @@ export function StickyGlass() {
         };
       });
 
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: reduce)", () => {
         if (!fade) return;
         gsap.set(fade, {
           filter: "none",
@@ -375,7 +478,7 @@ export function StickyGlass() {
   return (
     <div
       ref={rootRef}
-      className="pointer-events-none relative z-30 mt-0 w-[236px] md:mt-[30px] md:w-full md:max-w-[620px]"
+      className="pointer-events-none relative z-30 mt-0 w-[236px] md:mt-0 md:w-[400px] lg:mt-[30px] lg:w-full lg:max-w-[620px]"
     >
       {/* pin 本体と分離し、フェード／移動が pin の transform と干渉しないようにする */}
       <div data-sticky-fade className="w-full will-change-transform">
@@ -384,7 +487,8 @@ export function StickyGlass() {
           alt="眼鏡の正面"
           width={glassFrontImg.width}
           height={glassFrontImg.height}
-          sizes="(min-width: 1024px) 620px, 100vw"
+          sizes={glassFrontSizes}
+          quality={70}
           priority
           className="h-auto w-full"
         />

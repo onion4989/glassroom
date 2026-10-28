@@ -22,6 +22,8 @@ const detailAlt = "木のデスクに置かれたFREE FiTフレーム";
 type SpecRow = {
   label: string;
   value: string | string[];
+  /** 数値（Inter） */
+  num?: boolean;
 };
 
 const leftSpecs: SpecRow[] = [
@@ -35,7 +37,7 @@ const rightSpecs: SpecRow[] = [
     label: "サイズ",
     value: ["レンズ幅：53mm", "テンプル：143mm", "鼻幅：16mm", "天地幅：34mm"],
   },
-  { label: "重さ", value: "2mg" },
+  { label: "重さ", value: "2mg", num: true },
   { label: "原産国", value: "Made in Japan" },
 ];
 
@@ -47,7 +49,6 @@ export function Detail() {
   const panelRef = useRef<HTMLDivElement>(null);
   const spStageRef = useRef<HTMLDivElement>(null);
   const spShotRef = useRef<HTMLDivElement>(null);
-  const spSpecRef = useRef<HTMLDListElement>(null);
 
   // GSAP は DOM へ同期する。useGSAP が解除時に戻す。
   useGSAP(
@@ -107,6 +108,8 @@ export function Detail() {
       });
 
       mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
+        // ScrambleText は md+ のみ。Mobile 初回チャンクから外す。
+        let cancelled = false;
         let wait: gsap.core.Tween | null = null;
         let expand: gsap.core.Timeline | null = null;
         let decode: gsap.core.Tween | null = null;
@@ -128,14 +131,18 @@ export function Detail() {
           decode?.kill();
           const els = decodeEls();
           if (!els.length) return;
-          decode = gsap.to(els, {
-            duration: scrambleDur,
-            scrambleText: {
-              text: "{original}",
-              chars: scrambleChars,
-              speed: scrambleSpeed,
-            },
-            stagger: 0.08,
+          void import("@/lib/gsap-scramble").then(() => {
+            if (cancelled) return;
+            decode?.kill();
+            decode = gsap.to(els, {
+              duration: scrambleDur,
+              scrambleText: {
+                text: "{original}",
+                chars: scrambleChars,
+                speed: scrambleSpeed,
+              },
+              stagger: 0.08,
+            });
           });
         };
 
@@ -186,6 +193,7 @@ export function Detail() {
         window.addEventListener("resize", onResize);
 
         return () => {
+          cancelled = true;
           wait?.kill();
           expand?.kill();
           decode?.kill();
@@ -214,12 +222,10 @@ export function Detail() {
       mm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
         const stage = spStageRef.current;
         const shot = spShotRef.current;
-        const spec = spSpecRef.current;
-        if (!stage || !shot || !spec) return;
+        if (!stage || !shot) return;
 
         let wait: gsap.core.Tween | null = null;
         let expand: gsap.core.Timeline | null = null;
-        let decode: gsap.core.Tween | null = null;
         const prog = { p: 0 };
         const scale = () => (stage.clientWidth || artBase) / artBase;
 
@@ -259,28 +265,11 @@ export function Detail() {
           });
         };
 
-        const runDecode = () => {
-          decode?.kill();
-          const els = spec.querySelectorAll<HTMLElement>("[data-scramble]");
-          if (!els.length) return;
-          decode = gsap.to(els, {
-            duration: scrambleDur,
-            scrambleText: {
-              text: "{original}",
-              chars: scrambleChars,
-              speed: scrambleSpeed,
-            },
-            stagger: 0.08,
-          });
-        };
-
         const reset = () => {
           wait?.kill();
           wait = null;
           expand?.kill();
           expand = null;
-          decode?.kill();
-          decode = null;
           prog.p = 0;
           place(0);
         };
@@ -288,7 +277,7 @@ export function Detail() {
         const begin = () => {
           if (wait || expand) return;
           wait = gsap.delayedCall(enterLag, () => {
-            const tl = gsap.timeline({ onComplete: runDecode });
+            const tl = gsap.timeline();
             expand = tl;
             tl.to(prog, {
               p: 1,
@@ -313,7 +302,6 @@ export function Detail() {
         return () => {
           wait?.kill();
           expand?.kill();
-          decode?.kill();
           window.removeEventListener("resize", onResize);
         };
       });
@@ -340,16 +328,13 @@ export function Detail() {
             />
           </div>
         </div>
-        <dl
-          ref={spSpecRef}
-          className="mx-auto mt-[30px] flex w-full max-w-[350px] flex-col px-5"
-        >
+        <dl className="mx-auto mt-[30px] flex w-full max-w-[350px] flex-col px-5">
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
             <dt className="font-jp text-[16px] leading-none text-white">
               ブランド
             </dt>
             <dd className="font-jp text-[16px] leading-none text-white">
-              <span data-scramble>FREE FiT</span>
+              FREE FiT
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
@@ -357,7 +342,7 @@ export function Detail() {
               レンズの形
             </dt>
             <dd className="font-jp text-[16px] leading-none text-white">
-              <span data-scramble>オーバル</span>
+              オーバル
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
@@ -365,9 +350,9 @@ export function Detail() {
               素材
             </dt>
             <dd className="font-jp text-[16px] leading-[1.6] text-white">
-              <span data-scramble>テンプル：剛性チタン</span>
+              テンプル：剛性チタン
               <br />
-              <span data-scramble>フロント：ステンレス</span>
+              フロント：ステンレス
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
@@ -375,21 +360,21 @@ export function Detail() {
               サイズ
             </dt>
             <dd className="font-jp text-[16px] leading-[1.6] text-white">
-              <span data-scramble>レンズ幅：53mm</span>
+              レンズ幅：53mm
               <br />
-              <span data-scramble>テンプル：143mm</span>
+              テンプル：143mm
               <br />
-              <span data-scramble>鼻幅：16mm</span>
+              鼻幅：16mm
               <br />
-              <span data-scramble>天地幅：34mm</span>
+              天地幅：34mm
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 border-b border-white py-4">
             <dt className="font-jp text-[16px] leading-none text-white">
               重さ
             </dt>
-            <dd className="font-jp text-[16px] leading-none text-white">
-              <span data-scramble>2mg</span>
+            <dd className="font-num text-[16px] leading-none text-white">
+              2mg
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr] items-center gap-x-4 py-4">
@@ -397,16 +382,16 @@ export function Detail() {
               原産国
             </dt>
             <dd className="font-jp text-[16px] leading-none text-white">
-              <span data-scramble>Made in Japan</span>
+              Made in Japan
             </dd>
           </div>
         </dl>
       </div>
       <div ref={artRef} className="@container hidden w-full md:block">
-        <div ref={stageRef} className="relative h-[55.556cqw] w-full">
+        <div ref={stageRef} className="relative h-[500px] w-full lg:h-[55.556cqw]">
           <div
             ref={shotRef}
-            className="absolute top-[13.889cqw] left-[15.417cqw] h-[27.778cqw] w-[69.167cqw] overflow-hidden rounded-[1.736cqw]"
+            className="absolute inset-0 overflow-hidden lg:top-[13.889cqw] lg:left-[15.417cqw] lg:h-[27.778cqw] lg:w-[69.167cqw] lg:rounded-[1.736cqw]"
           >
             <Image
               src={detailSrc}
@@ -417,7 +402,7 @@ export function Detail() {
             />
             <div
               ref={panelRef}
-              className="absolute inset-x-0 bottom-0 flex h-[32%] gap-[2.083cqw] px-[6.25cqw] bg-black/70 md:motion-safe:opacity-0"
+              className="absolute inset-x-0 bottom-0 flex h-[140px] gap-8 px-16 bg-black/70 md:motion-safe:opacity-0 lg:h-[32%] lg:gap-[2.083cqw] lg:px-[6.25cqw]"
             >
               <SpecCol rows={leftSpecs} className="min-w-0 w-1/2" />
               <SpecCol rows={rightSpecs} className="min-w-0 w-1/2" />
@@ -426,6 +411,34 @@ export function Detail() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** 「キー：値」を分割してキー幅を揃える（Tablet でも ： が縦に揃う） */
+function SpecValueLine({ line }: { line: string }) {
+  const sep = "：";
+  const at = line.indexOf(sep);
+  const textClass =
+    "cursor-default font-jp text-[12px] leading-none whitespace-nowrap text-white select-none lg:text-[1.389cqw]";
+  if (at < 0) {
+    return (
+      <p data-scramble className={textClass}>
+        {line}
+      </p>
+    );
+  }
+  const key = line.slice(0, at);
+  const rest = line.slice(at);
+  return (
+    <p className={`flex items-baseline ${textClass}`}>
+      <span
+        data-scramble
+        className="inline-block w-[4.5em] shrink-0"
+      >
+        {key}
+      </span>
+      <span data-scramble>{rest}</span>
+    </p>
   );
 }
 
@@ -438,34 +451,30 @@ function SpecCol({
 }) {
   return (
     <div
-      className={`grid h-full grid-rows-3 py-[2.778cqw] ${className}`}
+      className={`grid h-full grid-rows-3 py-3 lg:py-[2.778cqw] ${className}`}
     >
       {rows.map((row, i) => (
         <div
           key={row.label}
-          className={`flex items-center gap-[10.972cqw] ${
+          className={`flex items-center gap-6 lg:gap-[6cqw] ${
             i < rows.length - 1 ? "border-b border-white" : ""
           }`}
         >
-          <p className="w-[6.944cqw] shrink-0 cursor-default font-jp text-[1.389cqw] leading-normal text-white select-none">
+          <p className="w-[5em] shrink-0 cursor-default font-jp text-[12px] leading-normal text-white select-none lg:w-[6.944cqw] lg:text-[1.389cqw]">
             {row.label}
           </p>
           {Array.isArray(row.value) ? (
-            <div className="grid grid-cols-2 gap-x-[2.778cqw] gap-y-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 lg:gap-x-[2.778cqw]">
               {row.value.map((line) => (
-                <p
-                  key={line}
-                  data-scramble
-                  className="cursor-default font-jp text-[1.389cqw] leading-none whitespace-nowrap text-white select-none"
-                >
-                  {line}
-                </p>
+                <SpecValueLine key={line} line={line} />
               ))}
             </div>
           ) : (
             <p
               data-scramble
-              className="cursor-default font-jp text-[1.389cqw] leading-normal whitespace-nowrap text-white select-none"
+              className={`cursor-default text-[12px] leading-normal whitespace-nowrap text-white select-none lg:text-[1.389cqw] ${
+                row.num ? "font-num" : "font-jp"
+              }`}
             >
               {row.value}
             </p>

@@ -20,8 +20,13 @@ const leaveBackStart = "top 30%";
 const dockKeepTop = 0.05;
 const dockKeepBot = 1;
 const risePx = 20;
-/** StickyGlass の dockRestY と揃える */
+/** StickyGlass の dockRestY と揃える（Desktop）。Tablet は box 中央なので 0 */
 const glassRestY = 50;
+const glassRestAt = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(min-width: 1024px)").matches
+    ? glassRestY
+    : 0;
 /** 箱内眼鏡のフェードアップ */
 const glassDur = 0.45;
 const glassFrom = 36;
@@ -218,7 +223,7 @@ export function FuncDesign() {
         showFaces();
         showDetails();
         // 眼鏡の表示は StickyGlass の吸着が担う。ここは静止位置だけ揃える。
-        gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestY, scale: 1 });
+        gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestAt(), scale: 1 });
       });
 
       mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
@@ -268,7 +273,9 @@ export function FuncDesign() {
           gsap.set(glass, {
             x: 0,
             scale: 1,
-            y: glassShown ? glassRestY : glassRestY + glassFrom * artScale(),
+            y: glassShown
+              ? glassRestAt()
+              : glassRestAt() + glassFrom * artScale(),
             autoAlpha: glassShown ? 1 : 0,
           });
         };
@@ -357,13 +364,18 @@ export function FuncDesign() {
             autoAlpha: 0,
             x: 0,
             scale: 1,
-            y: glassRestY + glassFrom * artScale(),
+            y: glassRestAt() + glassFrom * artScale(),
           });
         };
 
         const showGlass = () => {
           if (glassShown) {
-            gsap.set(glass, { autoAlpha: 1, x: 0, y: glassRestY, scale: 1 });
+            gsap.set(glass, {
+              autoAlpha: 1,
+              x: 0,
+              y: glassRestAt(),
+              scale: 1,
+            });
             return;
           }
           if (glassTw) return;
@@ -371,17 +383,17 @@ export function FuncDesign() {
             autoAlpha: 0,
             x: 0,
             scale: 1,
-            y: glassRestY + glassFrom * artScale(),
+            y: glassRestAt() + glassFrom * artScale(),
           });
           glassTw = gsap.to(glass, {
             autoAlpha: 1,
-            y: glassRestY,
+            y: glassRestAt(),
             duration: glassDur,
             ease: "power2.out",
             onComplete: () => {
               glassShown = true;
               glassTw = null;
-              gsap.set(glass, { autoAlpha: 1, y: glassRestY });
+              gsap.set(glass, { autoAlpha: 1, y: glassRestAt() });
             },
           });
         };
@@ -403,7 +415,9 @@ export function FuncDesign() {
           gsap.set(glass, {
             x: 0,
             scale: 1,
-            y: glassShown ? glassRestY : glassRestY + glassFrom * artScale(),
+            y: glassShown
+              ? glassRestAt()
+              : glassRestAt() + glassFrom * artScale(),
             autoAlpha: glassShown ? 1 : 0,
           });
         };
@@ -517,7 +531,7 @@ export function FuncDesign() {
       ref={rootRef}
       data-func-design
       aria-label="機能性 × デザイン"
-      className="relative w-full md:pt-25"
+      className="relative w-full md:pt-0 lg:pt-25"
     >
       {/* sticky 眼鏡より下。コンテンツは z-60 で眼鏡の上 */}
       <div
@@ -582,21 +596,21 @@ export function FuncDesign() {
           />
         </article>
       </div>
-      <div ref={artRef} className="@container relative z-60 mx-auto hidden w-full max-w-360 md:block">
+      <div ref={artRef} className="@container relative z-60 mx-auto hidden w-full max-w-360 px-8 py-[100px] md:block lg:px-0 lg:py-0">
         <h2
           id="func-design-title"
-          className="flex cursor-default items-baseline justify-center font-jp text-[4.444cqw] leading-[1.2] text-white select-none"
+          className="flex cursor-default items-baseline justify-center font-jp text-[48px] leading-[1.2] text-white select-none lg:text-[4.444cqw]"
         >
           <span>機能性</span>
-          <span className="ml-[1.597cqw]">×</span>
-          <span className="ml-[1.319cqw]">デザイン</span>
+          <span className="ml-[11px] text-[40px] lg:ml-[1.597cqw] lg:text-[inherit]">×</span>
+          <span className="ml-[11px] lg:ml-[1.319cqw]">デザイン</span>
         </h2>
-        <p className="mt-[0.972cqw] cursor-default text-center font-jp text-[1.667cqw] leading-[1.2] text-white select-none">
+        <p className="mt-[15px] cursor-default text-center font-jp text-[20px] leading-[1.2] text-white select-none lg:mt-[0.972cqw] lg:text-[1.667cqw]">
           機能性とデザイン、掛け心地を重視した設計
         </p>
         <ul
           data-list
-          className="relative mt-[6.667cqw] flex list-none gap-[1.667cqw] px-[8.333cqw]"
+          className="relative mt-[29px] flex list-none gap-[21px] px-0 lg:mt-[6.667cqw] lg:gap-[1.667cqw] lg:px-[8.333cqw]"
         >
           {featCards.map((card) => (
             <li
@@ -629,7 +643,7 @@ export function FuncDesign() {
                     data-glass
                     data-func-glass
                     aria-hidden
-                    className="w-155 shrink-0 md:motion-safe:opacity-0"
+                    className="w-[294px] shrink-0 md:motion-safe:opacity-0 lg:w-155"
                   >
                     <Image
                       src={glassFrontImg.src}

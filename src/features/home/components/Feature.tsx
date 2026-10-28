@@ -117,29 +117,29 @@ export function Feature() {
         aria-hidden
         className="pointer-events-none absolute inset-0 z-10 bg-[#070707]"
       />
-      <div className="@container relative z-60 mx-auto flex w-full max-w-360 flex-col items-center gap-[15px] px-5 py-10 md:block md:gap-0 md:px-0 md:py-0 md:pt-[4.306cqw]">
+      <div className="@container relative z-60 mx-auto flex w-full max-w-360 flex-col items-center gap-[15px] px-5 py-10 md:block md:gap-0 md:px-8 md:py-[100px] lg:px-0 lg:py-0 lg:pt-[4.306cqw]">
         <h2
           id="feature-title"
           className="flex cursor-default items-baseline justify-center font-jp text-white select-none"
         >
-          <span className="text-[32px] leading-none md:text-[4.444cqw] md:leading-[1.2]">
+          <span className="text-[32px] leading-none md:text-[48px] md:leading-[1.2] lg:text-[4.444cqw]">
             FREE FiT
           </span>
-          <span className="ml-[5px] text-[24px] leading-none md:ml-[0.833cqw] md:text-[3.333cqw] md:leading-[1.2]">
+          <span className="ml-[5px] text-[24px] leading-none md:ml-2 md:text-[32px] md:leading-[1.2] lg:ml-[0.833cqw] lg:text-[3.333cqw]">
             の
           </span>
-          <span className="ml-[5px] text-[32px] leading-none md:ml-[0.972cqw] md:text-[4.444cqw] md:leading-[1.2]">
+          <span className="ml-[5px] text-[32px] leading-none md:ml-2 md:text-[48px] md:leading-[1.2] lg:ml-[0.972cqw] lg:text-[4.444cqw]">
             特徴
           </span>
         </h2>
-        <p className="cursor-default text-center font-jp text-[16px] leading-none text-white select-none md:mt-[1.319cqw] md:text-[1.667cqw] md:leading-[1.2]">
+        <p className="cursor-default text-center font-jp text-[16px] leading-none text-white select-none md:mt-[13px] md:text-[24px] md:leading-[1.2] lg:mt-[1.319cqw] lg:text-[1.667cqw]">
           湿気の多い日でも曇りにくい撥水加工レンズ
         </p>
-        <ul className="grid w-full list-none grid-cols-2 gap-x-[10px] gap-y-3 md:mt-[3.542cqw] md:flex md:gap-[1.667cqw] md:px-[8.333cqw] md:pb-[5.694cqw]">
+        <ul className="grid w-full list-none grid-cols-2 gap-x-[10px] gap-y-3 md:mt-[34px] md:flex md:gap-5 md:px-0 md:pb-0 lg:mt-[3.542cqw] lg:gap-[1.667cqw] lg:px-[8.333cqw] lg:pb-[5.694cqw]">
           {featCards.map((card) => (
             <li
               key={card.title}
-              className="relative h-[160px] min-w-0 md:h-[33.333cqw] md:basis-0 md:grow"
+              className="relative h-[160px] min-w-0 md:h-[250px] md:w-[161px] md:grow-0 md:basis-[161px] lg:h-[33.333cqw] lg:w-auto lg:basis-0 lg:grow"
             >
               <div
                 data-card
@@ -147,17 +147,17 @@ export function Feature() {
               >
                 <div
                   data-parallax
-                  className="relative size-full overflow-hidden rounded-[15px] md:rounded-[1.736cqw]"
+                  className="relative size-full overflow-hidden rounded-[15px] md:rounded-[14.667px] lg:rounded-[1.736cqw]"
                 >
                   <Image
                     src={card.src}
                     alt={card.alt}
                     width={423}
                     height={720}
-                    sizes="(max-width: 767px) 45vw, (max-width: 1440px) 20vw, 282px"
+                    sizes="(max-width: 767px) 45vw, (max-width: 1023px) 161px, (max-width: 1440px) 20vw, 282px"
                     className="size-full object-cover"
                   />
-                  <p className="absolute top-2 right-2 left-2 z-10 flex h-[31px] cursor-default items-center rounded-[5px] bg-black/20 px-3 font-jp text-[14px] leading-none tracking-[0.1em] text-white select-none md:top-[0.833cqw] md:right-auto md:left-[0.972cqw] md:h-[3.333cqw] md:w-[13.403cqw] md:justify-center md:rounded-[1.042cqw] md:px-0 md:text-[1.389cqw] md:leading-[1.75] md:tracking-[0.139cqw]">
+                  <p className="absolute top-2 right-2 left-2 z-10 flex h-[31px] cursor-default items-center rounded-[5px] bg-black/20 px-3 font-jp text-[14px] leading-none tracking-[0.1em] text-white select-none md:top-[9px] md:right-auto md:left-[10px] md:h-[25px] md:w-[110px] md:justify-center md:rounded-[8.8px] md:px-0 md:text-[12px] md:leading-none lg:top-[0.833cqw] lg:left-[0.972cqw] lg:h-[3.333cqw] lg:w-[13.403cqw] lg:rounded-[1.042cqw] lg:text-[1.389cqw] lg:leading-[1.75] lg:tracking-[0.139cqw]">
                     {card.title}
                   </p>
                 </div>

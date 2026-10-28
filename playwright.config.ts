@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const e2eBaseURL = "http://127.0.0.1:3000";
+const e2ePort = process.env.PORT?.trim() || "3000";
+const e2eBaseURL = `http://127.0.0.1:${e2ePort}`;
 const jsonOut = process.env.PW_JSON?.trim();
 
 export default defineConfig({
@@ -29,5 +30,6 @@ export default defineConfig({
     url: e2eBaseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: { ...process.env, PORT: e2ePort },
   },
 });

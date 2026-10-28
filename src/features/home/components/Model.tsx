@@ -52,7 +52,8 @@ export function Model() {
       const mm = gsap.matchMedia();
       const modelRise = 24;
 
-      mm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+      // Mobile + Tablet: 縦積みの上昇フェード
+      mm.add("(max-width: 1023px) and (prefers-reduced-motion: no-preference)", () => {
         const img = root.querySelector<HTMLElement>("[data-sp-model]");
         const amber = root.querySelector<HTMLElement>("[data-sp-amber]");
         const gray = root.querySelector<HTMLElement>("[data-sp-gray]");
@@ -76,7 +77,7 @@ export function Model() {
         };
       });
 
-      mm.add("(max-width: 767px) and (prefers-reduced-motion: reduce)", () => {
+      mm.add("(max-width: 1023px) and (prefers-reduced-motion: reduce)", () => {
         const imgs = root.querySelectorAll<HTMLElement>(
           "[data-sp-model], [data-sp-amber], [data-sp-gray]",
         );
@@ -133,7 +134,7 @@ export function Model() {
         return glassCy - elCy;
       };
 
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: reduce)", () => {
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: reduce)", () => {
         gsap.set([amber.glass, gray.glass], { x: 0, autoAlpha: 1 });
         gsap.set([amber.tag, gray.tag, amber.name, gray.name], {
           autoAlpha: 1,
@@ -153,7 +154,7 @@ export function Model() {
         );
       });
 
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
         let play: gsap.core.Timeline | null = null;
         let started = false;
 
@@ -321,18 +322,20 @@ export function Model() {
       aria-label="選べる3モデル"
       className="relative z-10 w-full"
     >
-      <div className="flex flex-col items-center gap-8 px-5 py-10 md:hidden">
+      {/* Mobile + Tablet: 縦積み（Tablet は Figma 768 寸法） */}
+      <div className="flex flex-col items-center gap-8 px-5 py-10 md:gap-[75px] md:px-[185px] md:py-[100px] lg:hidden">
         <div className="text-center text-white">
-          <h2 className="font-jp text-[32px] leading-none tracking-[0.1em]">
+          <h2 className="font-jp text-[32px] leading-none tracking-[0.1em] md:text-[48px] md:tracking-[0.1em]">
             FREE FiT
           </h2>
-          <p className="mt-3 font-jp text-[24px] leading-none">
-            - 選べる3モデル -
+          <p className="mt-3 font-jp text-[24px] leading-none md:mt-[8px] md:text-[32px]">
+            <span className="md:hidden">- 選べる3モデル -</span>
+            <span className="hidden md:inline">選べる3モデル</span>
           </p>
         </div>
-        <div className="flex w-[236px] max-w-full flex-col items-center gap-10">
-          <div className="flex w-full flex-col items-center gap-5">
-            <p className="w-full text-center font-jp text-[20px] leading-none tracking-[0.1em] text-white">
+        <div className="flex w-[236px] max-w-full flex-col items-center gap-10 md:w-[400px] md:gap-[75px]">
+          <div className="flex w-full flex-col items-center gap-5 md:gap-[29px]">
+            <p className="w-full text-center font-jp text-[20px] leading-none tracking-[0.1em] text-white md:text-[24px]">
               リーズナブル
             </p>
             <div data-sp-model className="aspect-[620/173] w-full">
@@ -341,16 +344,16 @@ export function Model() {
                 alt="ノーマルのFREE FiTフレーム"
                 width={glassFrontImg.width}
                 height={glassFrontImg.height}
-                sizes="236px"
+                sizes="(min-width: 768px) 400px, 236px"
                 className="h-auto w-full"
               />
             </div>
-            <p className="w-full text-center font-jp text-[16px] leading-none tracking-[0.1em] text-white">
+            <p className="w-full text-center font-jp text-[16px] leading-none tracking-[0.1em] text-white md:text-[24px]">
               ノーマル
             </p>
           </div>
-          <div className="flex w-full flex-col items-center gap-5">
-            <p className="flex h-12 w-[200px] items-center justify-center border border-white font-jp text-[20px] leading-none tracking-[0.1em] text-white">
+          <div className="flex w-full flex-col items-center gap-5 md:gap-6">
+            <p className="flex h-12 w-[200px] items-center justify-center border border-white font-jp text-[20px] leading-none tracking-[0.1em] text-white md:w-[207px] md:text-[24px]">
               限定モデル
             </p>
             <div data-sp-amber className="w-full">
@@ -359,16 +362,16 @@ export function Model() {
                 alt={sideGlasses.amber.alt}
                 width={glassBox.w}
                 height={glassBox.h}
-                sizes="236px"
+                sizes="(min-width: 768px) 400px, 236px"
                 className="h-auto w-full"
               />
             </div>
-            <p className="w-full text-center font-jp text-[16px] leading-none tracking-[0.1em] text-white">
+            <p className="w-full text-center font-jp text-[16px] leading-none tracking-[0.1em] text-white md:text-[24px]">
               {sideGlasses.amber.name}
             </p>
           </div>
           <div className="flex w-full flex-col items-center gap-6">
-            <p className="flex h-12 w-[200px] items-center justify-center border border-white font-jp text-[20px] leading-none tracking-[0.1em] text-white">
+            <p className="flex h-12 w-[200px] items-center justify-center border border-white font-jp text-[20px] leading-none tracking-[0.1em] text-white md:w-[207px] md:text-[24px]">
               限定モデル
             </p>
             <div data-sp-gray className="w-full">
@@ -377,20 +380,20 @@ export function Model() {
                 alt={sideGlasses.gray.alt}
                 width={glassBox.w}
                 height={glassBox.h}
-                sizes="236px"
+                sizes="(min-width: 768px) 400px, 236px"
                 className="h-auto w-full"
               />
             </div>
-            <p className="w-full text-center font-jp text-[16px] leading-none tracking-[0.1em] text-white">
+            <p className="w-full text-center font-jp text-[16px] leading-none tracking-[0.1em] text-white md:text-[24px]">
               {sideGlasses.gray.name}
             </p>
           </div>
         </div>
       </div>
-      {/* sticky(z-30) が手前。コンテンツは奥 */}
+      {/* Desktop: sticky(z-30) が手前。横3列 */}
       <div
         data-art
-        className="@container relative z-10 mx-auto hidden w-full max-w-360 md:block"
+        className="@container relative z-10 mx-auto hidden w-full max-w-360 lg:block"
       >
         <div className="relative h-[55.556cqw]">
           <h2
@@ -421,7 +424,7 @@ export function Model() {
           >
             <div
               data-model-normal-img
-              className="size-full md:motion-safe:opacity-0"
+              className="size-full lg:motion-safe:opacity-0"
             >
               <Image
                 src={glassFrontImg.src}
@@ -443,7 +446,7 @@ export function Model() {
           <p
             data-side="amber"
             data-part="name"
-            className="absolute top-[43.472cqw] left-[14.444cqw] cursor-default font-jp text-[1.667cqw] leading-none tracking-[0.1em] whitespace-nowrap text-white select-none md:motion-safe:opacity-0"
+            className="absolute top-[43.472cqw] left-[14.444cqw] cursor-default font-jp text-[1.667cqw] leading-none tracking-[0.1em] whitespace-nowrap text-white select-none lg:motion-safe:opacity-0"
           >
             {sideGlasses.amber.name}
           </p>
@@ -453,7 +456,7 @@ export function Model() {
           <p
             data-side="gray"
             data-part="name"
-            className="absolute top-[43.472cqw] left-[73.819cqw] cursor-default font-jp text-[1.667cqw] leading-none tracking-[0.1em] whitespace-nowrap text-white select-none md:motion-safe:opacity-0"
+            className="absolute top-[43.472cqw] left-[73.819cqw] cursor-default font-jp text-[1.667cqw] leading-none tracking-[0.1em] whitespace-nowrap text-white select-none lg:motion-safe:opacity-0"
           >
             {sideGlasses.gray.name}
           </p>
@@ -474,7 +477,7 @@ function SideTag({
     <div
       data-side={side}
       data-part="tag"
-      className={`absolute top-[29.028cqw] flex h-[3.333cqw] w-[14.375cqw] cursor-default items-center justify-center font-jp text-[1.667cqw] leading-none tracking-[0.1em] text-white select-none md:motion-safe:opacity-0 ${className}`}
+      className={`absolute top-[29.028cqw] flex h-[3.333cqw] w-[14.375cqw] cursor-default items-center justify-center font-jp text-[1.667cqw] leading-none tracking-[0.1em] text-white select-none lg:motion-safe:opacity-0 ${className}`}
     >
       <span
         data-side={side}
@@ -516,7 +519,7 @@ function SideGlass({
     <div
       data-side={side}
       data-part="glass"
-      className={`absolute top-[34.583cqw] h-[6.944cqw] w-[24.861cqw] will-change-transform md:motion-safe:opacity-0 ${className}`}
+      className={`absolute top-[34.583cqw] h-[6.944cqw] w-[24.861cqw] will-change-transform lg:motion-safe:opacity-0 ${className}`}
     >
       <Image
         src={src}

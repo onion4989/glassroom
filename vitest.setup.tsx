@@ -7,6 +7,16 @@ vi.mock("next/image", async () => {
   return {
     default: (props: { alt?: string }) =>
       createElement("img", { alt: props.alt ?? "" }),
+    getImageProps: (opts: {
+      src: string;
+      sizes?: string;
+    }) => ({
+      props: {
+        src: opts.src,
+        srcSet: opts.src,
+        sizes: opts.sizes ?? "",
+      },
+    }),
   };
 });
 
@@ -56,11 +66,6 @@ vi.mock("@/lib/gsap", async () => {
     normalizeScroll: () => {},
   };
 
-  const ScrollSmoother = {
-    create: () => ({ kill: () => {}, paused: () => {}, scrollTo: () => {} }),
-    get: () => null,
-  };
-
   function useGSAP(fn: () => void | (() => void)) {
     React.useEffect(() => {
       try {
@@ -72,23 +77,36 @@ vi.mock("@/lib/gsap", async () => {
     }, [fn]);
   }
 
+  return {
+    gsap,
+    ScrollTrigger,
+    useGSAP,
+  };
+});
+
+vi.mock("@/lib/gsap-smoother", () => ({
+  ScrollSmoother: {
+    create: () => ({ kill: () => {}, paused: () => {}, scrollTo: () => {} }),
+    get: () => null,
+  },
+}));
+
+vi.mock("@/lib/gsap-split", () => {
   class SplitText {
     chars: HTMLElement[] = [];
     words: HTMLElement[] = [];
     lines: HTMLElement[] = [];
     revert() {}
+    static create() {
+      return new SplitText();
+    }
   }
-
-  return {
-    gsap,
-    ScrollTrigger,
-    ScrollSmoother,
-    SplitText,
-    TextPlugin: {},
-    ScrambleTextPlugin: {},
-    useGSAP,
-  };
+  return { SplitText };
 });
+
+vi.mock("@/lib/gsap-scramble", () => ({
+  ScrambleTextPlugin: {},
+}));
 
 function mediaList(query: string): MediaQueryList {
   return {
