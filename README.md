@@ -101,10 +101,10 @@
 ## 作者
 
 【名前】
-・Takashi Ogawa
+- Takashi Ogawa
 
 【開発期間】
-・実働 約 1 週間
+- 実働 約 1 週間
 
 【その他】
 - ポートフォリオ: https://portfolio.see-u-soon.design
