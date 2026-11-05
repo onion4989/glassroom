@@ -2,10 +2,19 @@
 
 【デモ】
 - Site：https://glassroom.see-u-soon.design/
-- デスクトップ HERO
+- デスクトップ / モバイル
 
-![デスクトップ HERO](docs/readme/desktop.png)
-![モバイル](docs/readme/mobile.png)
+<table>
+  <tr>
+    <td width="70%" valign="top">
+      <img src="docs/readme/desktop.png" alt="デスクトップ" />
+    </td>
+    <td width="30%" valign="top">
+      <img src="docs/readme/mobile.png" alt="モバイル" />
+    </td>
+  </tr>
+</table>
+
 
 架空の眼鏡ブランドの製品紹介ランディングページです。
 
